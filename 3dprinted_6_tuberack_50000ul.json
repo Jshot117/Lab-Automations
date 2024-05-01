@@ -1,0 +1,122 @@
+{
+    "ordering": [
+        [
+            "A1",
+            "B1"
+        ],
+        [
+            "A2",
+            "B2"
+        ],
+        [
+            "A3",
+            "B3"
+        ]
+    ],
+    "brand": {
+        "brand": "3D printed",
+        "brandId": []
+    },
+    "metadata": {
+        "displayName": "3D printed 6 Tube Rack with Falcon 50 mL",
+        "displayCategory": "tubeRack",
+        "displayVolumeUnits": "µL",
+        "tags": []
+    },
+    "dimensions": {
+        "xDimension": 127.15,
+        "yDimension": 85,
+        "zDimension": 120.3
+    },
+    "wells": {
+        "A1": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 35.5,
+            "y": 59.76,
+            "z": 7.3
+        },
+        "B1": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 35.5,
+            "y": 24.76,
+            "z": 7.3
+        },
+        "A2": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 70.5,
+            "y": 59.76,
+            "z": 7.3
+        },
+        "B2": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 70.5,
+            "y": 24.76,
+            "z": 7.3
+        },
+        "A3": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 105.5,
+            "y": 59.76,
+            "z": 7.3
+        },
+        "B3": {
+            "depth": 113,
+            "totalLiquidVolume": 50000,
+            "shape": "circular",
+            "diameter": 27.81,
+            "x": 105.5,
+            "y": 24.76,
+            "z": 7.3
+        }
+    },
+    "groups": [
+        {
+            "brand": {
+                "brand": "Falcon",
+                "brandId": []
+            },
+            "metadata": {
+                "wellBottomShape": "v",
+                "displayCategory": "tubeRack"
+            },
+            "wells": [
+                "A1",
+                "B1",
+                "A2",
+                "B2",
+                "A3",
+                "B3"
+            ]
+        }
+    ],
+    "parameters": {
+        "format": "irregular",
+        "quirks": [],
+        "isTiprack": false,
+        "isMagneticModuleCompatible": false,
+        "loadName": "3dprinted_6_tuberack_50000ul"
+    },
+    "namespace": "custom_beta",
+    "version": 1,
+    "schemaVersion": 2,
+    "cornerOffsetFromSlot": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
