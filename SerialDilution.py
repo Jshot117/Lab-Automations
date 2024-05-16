@@ -71,6 +71,7 @@ def run(protocol: protocol_api.ProtocolContext):
     excluded_wells = aluminumblock.rows_by_name()['B'] 
     target_wells = [well for well in target_wells if well not in excluded_wells]
     for i in range(iterations):
+        right_pipette.pick_up_tip()
         for well in target_wells: 
             aspiration_zone = determine_aspiration_zone(source_well_volume)
             if aspiration_zone == 'bottom':
@@ -85,6 +86,7 @@ def run(protocol: protocol_api.ProtocolContext):
             if source_well_volume <= 0:
                 right_pipette.home()
                 protocol.pause("No liquid in tube rack, well 0")
+        right_pipette.drop_tip()
         for index in range(3):
             if index == 2:
                 index+=1
