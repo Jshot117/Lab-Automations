@@ -71,7 +71,20 @@ def run(protocol: protocol_api.ProtocolContext):
     excluded_wells = aluminumblock.rows_by_name()['B'] 
     target_wells = [well for well in target_wells if well not in excluded_wells]
     for i in range(iterations):
-        #begining of serial dilution
+        for well in target_wells: 
+            aspiration_zone = determine_aspiration_zone(source_well_volume)
+            if aspiration_zone == 'bottom':
+                source_well_aspiration_zone = source_well
+            else:
+                source_well_aspiration_zone = source_well.top(aspiration_zone)
+            right_pipette.transfer(dilution_transfer_amount, source_well_aspiration_zone,well, new_tip = 'never')
+            right_pipette.blow_out()
+            source_well_volume = source_well_volume - dilution_transfer_amount
+            protocol.comment(source_well_volume)
+            protocol.comment(aspiration_zone)
+            if source_well_volume <= 0:
+                right_pipette.home()
+                protocol.pause("No liquid in tube rack, well 0")
         for index in range(3):
             if index == 2:
                 index+=1
