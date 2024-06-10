@@ -85,12 +85,13 @@ def run(protocol: protocol_api.ProtocolContext):
     source_well_volume = 40150  # tuberack.wells()[0].max_volume
     patient_zero_well = wellplate.wells()[0]  # location for patient zero
     patient_zero_well_volume = initial_bacteria_amount
-    well_plate_volumes = {
-        k: 0 for k in wellplate.wells()
-    }  # Creates and sets all plate wells to volume of zero
+    # Creates and sets all plate wells to volume of zero
+    well_plate_volumes = {k: 0 for k in wellplate.wells()}
+    
+    # Creates a list from dictionary of probabilites
     column_probabilites_list = list(
         column_probabilites.values()
-    )  # Creates a list from dictionary of probabilites
+    )  
     well_probabilites = []  # Creates a empty List
     # fills empty well_probabilites list with 96 items and probabilites
     for prob in column_probabilites_list:
