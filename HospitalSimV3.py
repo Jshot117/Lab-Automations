@@ -53,6 +53,10 @@ column_probabilites = {
     "Column Eleven": 0,
     "Column Twelve": 0,
 }
+# need to implement new class's
+class_dict = {"Doctor": 0, "Nurse": 0, "Patient": 0, "Surface": 0, "Equipment": 0}
+
+
 zone_five = -40
 zone_four = -59
 zone_three = -76
@@ -75,9 +79,15 @@ def determine_aspiration_zone(volume):
 
 def run(protocol: protocol_api.ProtocolContext):
     # initalize labware
-    wellplate_morning = protocol.load_labware(wellplate_morning_LOADNAME, wellplate_morning_SLOT)
-    wellplate_afternoon = protocol.load_labware(wellplate_afternoon_LOADNAME, wellplate_afternoon_SLOT)
-    wellplate_night = protocol.load_labware(wellplate_night_LOADNAME, wellplate_night_SLOT)
+    wellplate_morning = protocol.load_labware(
+        wellplate_morning_LOADNAME, wellplate_morning_SLOT
+    )
+    wellplate_afternoon = protocol.load_labware(
+        wellplate_afternoon_LOADNAME, wellplate_afternoon_SLOT
+    )
+    wellplate_night = protocol.load_labware(
+        wellplate_night_LOADNAME, wellplate_night_SLOT
+    )
     p20tiprack = protocol.load_labware(P20_TIPRACK_LOADNAME, P20_TIPRACK_SLOT)
     p300tiprack = protocol.load_labware(P300_TIPRACK_LOADNAME, P300_TIPRACK_SLOT)
     tuberack = protocol.load_labware(TUBERACK_LOADNAME, TUBERACK_SLOT)
@@ -90,12 +100,11 @@ def run(protocol: protocol_api.ProtocolContext):
     )
     # name common variables
     source_well = tuberack.wells()[0]
-    source_well_volume = 40150  # tuberack.wells()[0].max_volume
+    source_well_volume = tuberack.wells()[0].max_volume
     patient_zero_well = wellplate_morning.wells()[0]  # location for patient zero
     patient_zero_well_volume = initial_bacteria_amount
     # Creates and sets all plate wells to volume of zero
     well_plate_morning_volume = {k: 0 for k in wellplate_morning.wells()}
-    
 
     # Creates a list from dictionary of probabilites
     column_probabilites_list = list(column_probabilites.values())
