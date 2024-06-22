@@ -17,14 +17,14 @@ P20_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_20ul"
 P300_TIPRACK_SLOT = "11"
 P300_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_200ul"
 
-wellplate_morning_SLOT = "4"
-wellplate_morning_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_patient_SLOT = "4"
+well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
-wellplate_afternoon_SLOT = "5"
-wellplate_afternoon_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_shift_one_SLOT = "5"
+well_plate_shift_one_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
-wellplate_night_SLOT = "6"
-wellplate_night_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_shift_two_SLOT = "6"
+well_plate_shift_two_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 LEFT_PIPETTE_MOUNT = "left"
 LEFT_PIPETTE_NAME = "p20_single_gen2"
@@ -54,7 +54,15 @@ column_probabilites = {
     "Column Twelve": 0,
 }
 # need to implement new class's
-class_dict = {"Doctor": 0, "Nurse": 0, "Patient": 0, "Surface": 0, "Equipment": 0}
+categories = {
+    "patients": [],
+    "doctors": [],
+    "nurses": [],
+    "equipment": [],
+    "surfaces": [],
+}
+
+shifts = ["morning", "afternoon", "night"]
 
 
 zone_five = -40
@@ -79,14 +87,14 @@ def determine_aspiration_zone(volume):
 
 def run(protocol: protocol_api.ProtocolContext):
     # initalize labware
-    wellplate_morning = protocol.load_labware(
-        wellplate_morning_LOADNAME, wellplate_morning_SLOT
+    well_plate_patient = protocol.load_labware(
+        well_plate_patient_LOADNAME, well_plate_patient_SLOT
     )
-    wellplate_afternoon = protocol.load_labware(
-        wellplate_afternoon_LOADNAME, wellplate_afternoon_SLOT
+    well_plate_shift_one = protocol.load_labware(
+        well_plate_shift_one_LOADNAME, well_plate_shift_one_SLOT
     )
-    wellplate_night = protocol.load_labware(
-        wellplate_night_LOADNAME, wellplate_night_SLOT
+    well_plate_shift_two = protocol.load_labware(
+        well_plate_shift_two_LOADNAME, well_plate_shift_two_SLOT
     )
     p20tiprack = protocol.load_labware(P20_TIPRACK_LOADNAME, P20_TIPRACK_SLOT)
     p300tiprack = protocol.load_labware(P300_TIPRACK_LOADNAME, P300_TIPRACK_SLOT)
@@ -101,10 +109,10 @@ def run(protocol: protocol_api.ProtocolContext):
     # name common variables
     source_well = tuberack.wells()[0]
     source_well_volume = tuberack.wells()[0].max_volume
-    patient_zero_well = wellplate_morning.wells()[0]  # location for patient zero
+    patient_zero_well = well_plate_patient.wells()[0]  # location for patient zero
     patient_zero_well_volume = initial_bacteria_amount
     # Creates and sets all plate wells to volume of zero
-    well_plate_morning_volume = {k: 0 for k in wellplate_morning.wells()}
+    well_plate_morning_volume = {k: 0 for k in well_plate_patient.wells()}
 
     # Creates a list from dictionary of probabilites
     column_probabilites_list = list(column_probabilites.values())
@@ -120,17 +128,17 @@ def run(protocol: protocol_api.ProtocolContext):
     source_well_volume = source_well_volume - initial_bacteria_amount
     for i in range(4):
         random_target = random.choices(
-            wellplate_morning.wells(), weights=well_probabilites, k=1
+            well_plate_patient.wells(), weights=well_probabilites, k=1
         )[0]
         while well_plate_morning_volume[random_target] >= 50:
-            random_target_index = wellplate_morning.wells().index(random_target)
+            random_target_index = well_plate_patient.wells().index(random_target)
             well_probabilites[random_target_index] = 0
             # Check if there's no valid well left
             if sum(well_probabilites) == 0:
                 protocol.comment("All wells are full. Stopping transfer.")
                 return
             random_target = random.choices(
-                wellplate_morning.wells(), weights=well_probabilites, k=1
+                well_plate_patient.wells(), weights=well_probabilites, k=1
             )[0]
         left_pipette.transfer(
             bacteria_transfer_amount,
