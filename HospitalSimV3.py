@@ -11,20 +11,27 @@ metadata = {
 }
 
 # Labware definitions
-P20_TIPRACK_SLOT = "7"
+P20_TIPRACK_SLOT = "9"
 P20_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_20ul"
 
-P300_TIPRACK_SLOT = "11"
+P300_TIPRACK_SLOT = "6"
 P300_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_200ul"
 
 well_plate_patient_SLOT = "4"
-well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
 well_plate_shift_one_SLOT = "5"
-well_plate_shift_one_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_shift_one_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
 well_plate_shift_two_SLOT = "6"
-well_plate_shift_two_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
+well_plate_shift_two_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+
+well_plate_surfaces_SLOT = "8"
+well_plate_surfaces_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+
+well_plate_equipment_SLOT = "2"
+well_plate_equipment_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+
 
 LEFT_PIPETTE_MOUNT = "left"
 LEFT_PIPETTE_NAME = "p20_single_gen2"
@@ -62,7 +69,7 @@ categories = {
     "surfaces": [],
 }
 
-shifts = ["morning", "afternoon", "night"]
+shifts = ["shift_one", "shift_two"]
 
 
 zone_five = -40
@@ -96,6 +103,30 @@ def run(protocol: protocol_api.ProtocolContext):
     well_plate_shift_two = protocol.load_labware(
         well_plate_shift_two_LOADNAME, well_plate_shift_two_SLOT
     )
+    well_plate_surfaces = protocol.load_labware(
+        well_plate_surfaces_LOADNAME, well_plate_surfaces_SLOT
+    )
+    well_plate_equipment = protocol.load_labware(
+        well_plate_equipment_LOADNAME, well_plate_equipment_SLOT
+    )
+    
+    # label wells to categories
+    categories["patients"] = well_plate_patient.wells[:20]
+    
+    categories["doctors"] = {
+        "shift_one": well_plate_shift_one.wells()[:6],
+        "shift_two": well_plate_shift_two.wells()[:6]
+    }
+    
+    categories["nurses"] = {
+        "shift_one": well_plate_shift_one.wells()[6:18],
+        "shift_two": well_plate_shift_two.wells()[6:18]
+    }
+
+    categories["equipment"] = well_plate_equipment.wells()[:20]
+
+    categories["surfaces"] = well_plate_surfaces.wells()[:60]
+    
     p20tiprack = protocol.load_labware(P20_TIPRACK_LOADNAME, P20_TIPRACK_SLOT)
     p300tiprack = protocol.load_labware(P300_TIPRACK_LOADNAME, P300_TIPRACK_SLOT)
     tuberack = protocol.load_labware(TUBERACK_LOADNAME, TUBERACK_SLOT)
