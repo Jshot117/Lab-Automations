@@ -43,7 +43,8 @@ TUBERACK_SLOT = "3"
 TUBERACK_LOADNAME = "opentrons_6_tuberack_falcon_50ml_conical"
 
 # adjustable variables
-initial_bacteria_amount = 150  # can not go over 200
+initial_bacteria_amount = 100  # can not go over 200
+initial_media_amount = 50
 time_amount = 1  # time in seconds until pipette dispenses next "liquid" into wells
 bacteria_transfer_amount = 50  # can not go over initial_bacteria_amount and initial_bacteria_amount mod bacteria_transfer_amount = zero
 column_probabilites = {
@@ -118,26 +119,6 @@ def run(protocol: protocol_api.ProtocolContext):
     well_plate_equipment = protocol.load_labware(
         well_plate_equipment_LOADNAME, well_plate_equipment_SLOT
     )
-    
-    # label wells to categories
-    categories["patients"] = well_plate_patient.wells[:20]
-    
-    categories["doctors"] = {
-        "shift_one": well_plate_shift.wells()[:6],
-        "shift_two": well_plate_second_patient.wells()[18:24],
-        "shift_three" : well_plate_shift.well()[36:42]
-    }
-    
-    categories["nurses"] = {
-        "shift_one": well_plate_shift.wells()[6:18],
-        "shift_two": well_plate_shift.wells()[24:36],
-        "shift_three" : well_plate_shift.well()[42:54]
-    }
-
-    categories["equipment"] = well_plate_equipment.wells()[:20]
-
-    categories["surfaces"] = well_plate_surfaces.wells()[:60]
-    
     p20tiprack = protocol.load_labware(P20_TIPRACK_LOADNAME, P20_TIPRACK_SLOT)
     p300tiprack = protocol.load_labware(P300_TIPRACK_LOADNAME, P300_TIPRACK_SLOT)
     tuberack = protocol.load_labware(TUBERACK_LOADNAME, TUBERACK_SLOT)
@@ -148,13 +129,38 @@ def run(protocol: protocol_api.ProtocolContext):
     right_pipette = protocol.load_instrument(
         RIGHT_PIPETTE_NAME, RIGHT_PIPETTE_MOUNT, tip_racks=[p300tiprack]
     )
+
+    # label wells to categories
+    categories["patients"] = well_plate_patient.wells[:20]
+
+    categories["doctors"] = {
+        "shift_one": well_plate_shift.wells()[:6],
+        "shift_two": well_plate_second_patient.wells()[18:24],
+        "shift_three": well_plate_shift.well()[36:42],
+    }
+
+    categories["nurses"] = {
+        "shift_one": well_plate_shift.wells()[6:18],
+        "shift_two": well_plate_shift.wells()[24:36],
+        "shift_three": well_plate_shift.well()[42:54],
+    }
+
+    categories["equipment"] = well_plate_equipment.wells()[:20]
+
+    categories["surfaces"] = well_plate_surfaces.wells()[:60]
+
     # name common variables
     source_well = tuberack.wells()[0]
     source_well_volume = tuberack.wells()[0].max_volume
     patient_zero_well = categories["patients"][0]  # location for patient zero
-    patient_zero_well_volume = initial_bacteria_amount
+    patient_zero_well_volume = initial_bacteria_amount + initial_media_amount
     # Creates and sets all plate wells to volume of zero
-    well_plate_morning_volume = {k: 0 for k in well_plate_patient.wells()}
+    # well_plate_morning_volume = {k: 0 for k in well_plate_patient.wells()}
+    well_plate_shift_volume = {k: initial_media_amount for k in well_plate_shift.wells()}
+    well_plate_patient_volume = {k: initial_media_amount for k in well_plate_patient.wells()}
+    well_plate_second_patient_volume = {k: initial_media_amount for k in well_plate_second_patient.wells()}
+    well_plate_equipment_volume = {k: initial_media_amount for k in well_plate_equipment.wells()}
+    well_plate_surfaces_volume = {k: initial_media_amount for k in well_plate_surfaces.wells()}
 
     # # Creates a list from dictionary of probabilites
     # column_probabilites_list = list(column_probabilites.values())
@@ -163,22 +169,20 @@ def run(protocol: protocol_api.ProtocolContext):
     # for prob in column_probabilites_list:
     #     well_probabilites.extend([prob] * 8)
     # well_probabilites[0] = 0
-    
+
     # start of commands
     right_pipette.transfer(
         initial_bacteria_amount, source_well.top(zone_five), patient_zero_well
     )
     source_well_volume = source_well_volume - initial_bacteria_amount
-    
+
     def simulate_interaction(source_well, target_well):
         # Simulate the transfer of bacteria from source_well to target_well
-        left_pipette.transfer(bacteria_transfer_amount, source_well, target_well, new_tip='always')
+        left_pipette.transfer(
+            bacteria_transfer_amount, source_well, target_well, new_tip="always"
+        )
         protocol.delay(seconds=time_amount)
-    
-    
-    
-    
-    
+
     # for i in range(4):
     #     random_target = random.choices(
     #         well_plate_patient.wells(), weights=well_probabilites, k=1
