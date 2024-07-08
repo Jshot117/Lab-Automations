@@ -47,28 +47,6 @@ initial_bacteria_amount = 100  # can not go over 200
 initial_media_amount = 50
 time_amount = 1  # time in seconds until pipette dispenses next "liquid" into wells
 bacteria_transfer_amount = 50  # can not go over initial_bacteria_amount and initial_bacteria_amount mod bacteria_transfer_amount = zero
-column_probabilites = {
-    "Column One": 0,
-    "Column Two": 5,
-    "Column Three": 1,
-    "Column Four": 0,
-    "Column Five": 0,
-    "Column Six": 0,
-    "Column Seven": 0,
-    "Column Eight": 0,
-    "Column Nine": 0,
-    "Column Ten": 0,
-    "Column Eleven": 0,
-    "Column Twelve": 0,
-}
-# need to implement new class's
-categories = {
-    "patients": [],
-    "doctors": [],
-    "nurses": [],
-    "equipment": [],
-    "surfaces": [],
-}
 
 interaction_probabilities = {
     "nurse_patient": 0.50,
@@ -80,7 +58,6 @@ interaction_probabilities = {
 }
 
 shifts = ["shift_one", "shift_two", "shift_three"]
-
 
 zone_five = -40
 zone_four = -59
@@ -131,57 +108,75 @@ def run(protocol: protocol_api.ProtocolContext):
     )
 
     # label wells to categories
-    categories["patients"] = well_plate_patient.wells[:20]
-
-    categories["doctors"] = {
-        "shift_one": well_plate_shift.wells()[:6],
-        "shift_two": well_plate_second_patient.wells()[18:24],
-        "shift_three": well_plate_shift.well()[36:42],
+    categories = {
+        "patients": well_plate_patient.wells()[:20],
+        "doctors": {
+            "shift_one": well_plate_shift.wells()[:6],
+            "shift_two": well_plate_shift.wells()[18:24],
+            "shift_three": well_plate_shift.wells()[36:42],
+        },
+        "nurses": {
+            "shift_one": well_plate_shift.wells()[6:18],
+            "shift_two": well_plate_shift.wells()[24:36],
+            "shift_three": well_plate_shift.wells()[42:54],
+        },
+        "equipment": well_plate_equipment.wells()[:20],
+        "surfaces": well_plate_surfaces.wells()[:60],
     }
-
-    categories["nurses"] = {
-        "shift_one": well_plate_shift.wells()[6:18],
-        "shift_two": well_plate_shift.wells()[24:36],
-        "shift_three": well_plate_shift.well()[42:54],
+    well_plate_volumes = {
+        "shift": {
+            well: initial_media_amount
+            for shift in ["shift_one", "shift_two", "shift_three"]
+            for category in ["doctors", "nurses"]
+            for well in categories[category][shift]
+        },
+        "patient": {well: initial_media_amount for well in categories["patients"]},
+        "equipment": {well: initial_media_amount for well in categories["equipment"]},
+        "surface": {well: initial_media_amount for well in categories["surfaces"]},
     }
-
-    categories["equipment"] = well_plate_equipment.wells()[:20]
-
-    categories["surfaces"] = well_plate_surfaces.wells()[:60]
 
     # name common variables
     source_well = tuberack.wells()[0]
     source_well_volume = tuberack.wells()[0].max_volume
+    source_well_bacteria = tuberack.wells()[1]
+    source_well_bacteria_volume = tuberack.wells()[1].max_volume # or actual amount of bacteria in tube
     patient_zero_well = categories["patients"][0]  # location for patient zero
     patient_zero_well_volume = initial_bacteria_amount + initial_media_amount
-    # Creates and sets all plate wells to volume of zero
-    # well_plate_morning_volume = {k: 0 for k in well_plate_patient.wells()}
-    well_plate_shift_volume = {k: initial_media_amount for k in well_plate_shift.wells()}
-    well_plate_patient_volume = {k: initial_media_amount for k in well_plate_patient.wells()}
-    well_plate_second_patient_volume = {k: initial_media_amount for k in well_plate_second_patient.wells()}
-    well_plate_equipment_volume = {k: initial_media_amount for k in well_plate_equipment.wells()}
-    well_plate_surfaces_volume = {k: initial_media_amount for k in well_plate_surfaces.wells()}
 
-    # # Creates a list from dictionary of probabilites
-    # column_probabilites_list = list(column_probabilites.values())
-    # well_probabilites = []  # Creates a empty List
-    # # fills empty well_probabilites list with 96 items and probabilites
-    # for prob in column_probabilites_list:
-    #     well_probabilites.extend([prob] * 8)
-    # well_probabilites[0] = 0
-
-    # start of commands
     right_pipette.transfer(
         initial_bacteria_amount, source_well.top(zone_five), patient_zero_well
     )
     source_well_volume = source_well_volume - initial_bacteria_amount
 
-    def simulate_interaction(source_well, target_well):
-        # Simulate the transfer of bacteria from source_well to target_well
-        left_pipette.transfer(
-            bacteria_transfer_amount, source_well, target_well, new_tip="always"
+    def fill_wells_with_media(target_wells, amount_of_media):
+        global source_well_volume  # Make source_well_volume global to update it within this function
+        aspiration_zone = determine_aspiration_zone(source_well_volume)
+        source_well_aspiration_zone = (
+            source_well
+            if aspiration_zone == "bottom"
+            else source_well.top(aspiration_zone)
         )
-        protocol.delay(seconds=time_amount)
+        right_pipette.pick_up_tip()
+        for well in target_wells:
+            right_pipette.transfer(
+                amount_of_media, source_well_aspiration_zone, well, new_tip="never"
+            )
+            right_pipette.blow_out()
+            source_well_volume -= amount_of_media
+            protocol.comment(f"Remaining source volume: {source_well_volume}")
+            protocol.comment(f"Aspiration zone: {aspiration_zone}")
+
+            if source_well_volume <= 0:
+                right_pipette.drop_tip()
+                protocol.pause("No liquid in tube rack, well 0")
+                return
+        right_pipette.drop_tip()
+    
+    
+
+
+
+
 
     # for i in range(4):
     #     random_target = random.choices(
