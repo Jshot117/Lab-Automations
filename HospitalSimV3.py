@@ -4,7 +4,7 @@ from opentrons import protocol_api
 
 
 metadata = {
-    "protocolName": "Hospital Simulation V2",
+    "protocolName": "Hospital Simulation V3",
     "authorName": "Jonnathan Saavedra",
     "description": "Simulates hospital environment using wells as subjects from a hospital incorporates shifts",
     "apiLevel": "2.14",
@@ -17,19 +17,19 @@ P20_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_20ul"
 P300_TIPRACK_SLOT = "6"
 P300_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_200ul"
 
-well_plate_patient_SLOT = "4"
+well_plate_patient_SLOT = "10"
 well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
-well_plate_shift_SLOT = "5"
+well_plate_shift_SLOT = "7"
 well_plate_shift_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
-well_plate_second_patient_SLOT = "6"
+well_plate_second_patient_SLOT = "4"
 well_plate_second_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
 well_plate_surfaces_SLOT = "8"
 well_plate_surfaces_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
-well_plate_equipment_SLOT = "2"
+well_plate_equipment_SLOT = "11"
 well_plate_equipment_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
 
 
@@ -141,14 +141,13 @@ def run(protocol: protocol_api.ProtocolContext):
     source_well_bacteria = tuberack.wells()[1]
     source_well_bacteria_volume = tuberack.wells()[1].max_volume # or actual amount of bacteria in tube
     patient_zero_well = categories["patients"][0]  # location for patient zero
-    patient_zero_well_volume = initial_bacteria_amount + initial_media_amount
 
     right_pipette.transfer(
         initial_bacteria_amount, source_well.top(zone_five), patient_zero_well
     )
     source_well_volume = source_well_volume - initial_bacteria_amount
 
-    def fill_wells_with_media(target_wells, amount_of_media):
+    def fill_wells_with_media(target_wells, amount_of_media, source_well):
         global source_well_volume  # Make source_well_volume global to update it within this function
         aspiration_zone = determine_aspiration_zone(source_well_volume)
         source_well_aspiration_zone = (
@@ -171,8 +170,21 @@ def run(protocol: protocol_api.ProtocolContext):
                 protocol.pause("No liquid in tube rack, well 0")
                 return
         right_pipette.drop_tip()
-    
-    
+        
+        fill_wells_with_media(categories["patients"], initial_media_amount, source_well)
+        fill_wells_with_media(categories["doctors"]["shift_one"], initial_media_amount, source_well)
+        fill_wells_with_media(categories["nurses"]["shift_one"], initial_media_amount, source_well)
+        fill_wells_with_media(categories["surfaces"], initial_media_amount, source_well)
+        fill_wells_with_media(categories["equipment"], initial_media_amount, source_well)
+        
+        #infect patient zero
+        left_pipette.transfer(
+            bacteria_transfer_amount, source_well_bacteria, patient_zero_well
+        )
+        #update volumes of in source well and patient zero well
+        source_well_bacteria_volume = source_well_bacteria_volume - bacteria_transfer_amount
+        well_plate_volumes["patient"][patient_zero_well] += bacteria_transfer_amount
+        
 
 
 
