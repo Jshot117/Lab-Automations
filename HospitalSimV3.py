@@ -18,20 +18,19 @@ P300_TIPRACK_SLOT = "6"
 P300_TIPRACK_LOADNAME = "opentrons_96_filtertiprack_200ul"
 
 well_plate_patient_SLOT = "10"
-well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+well_plate_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 well_plate_shift_SLOT = "7"
-well_plate_shift_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+well_plate_shift_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 well_plate_second_patient_SLOT = "4"
-well_plate_second_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+well_plate_second_patient_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 well_plate_surfaces_SLOT = "8"
-well_plate_surfaces_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
+well_plate_surfaces_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 well_plate_equipment_SLOT = "11"
-well_plate_equipment_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"  # need to update loadname value to correct value
-
+well_plate_equipment_LOADNAME = "opentronsappliedbiosystems_96_aluminumblock_200ul"
 
 LEFT_PIPETTE_MOUNT = "left"
 LEFT_PIPETTE_NAME = "p20_single_gen2"
@@ -42,7 +41,7 @@ RIGHT_PIPETTE_NAME = "P300_single_gen2"
 TUBERACK_SLOT = "3"
 TUBERACK_LOADNAME = "opentrons_6_tuberack_falcon_50ml_conical"
 
-# adjustable variables
+# Adjustable variables
 initial_bacteria_amount = 100  # can not go over 200
 initial_media_amount = 50
 time_amount = 1  # time in seconds until pipette dispenses next "liquid" into wells
@@ -80,7 +79,7 @@ def determine_aspiration_zone(volume):
 
 
 def run(protocol: protocol_api.ProtocolContext):
-    # initalize labware
+    # Initialize labware
     well_plate_patient = protocol.load_labware(
         well_plate_patient_LOADNAME, well_plate_patient_SLOT
     )
@@ -99,7 +98,7 @@ def run(protocol: protocol_api.ProtocolContext):
     p20tiprack = protocol.load_labware(P20_TIPRACK_LOADNAME, P20_TIPRACK_SLOT)
     p300tiprack = protocol.load_labware(P300_TIPRACK_LOADNAME, P300_TIPRACK_SLOT)
     tuberack = protocol.load_labware(TUBERACK_LOADNAME, TUBERACK_SLOT)
-    # initizlize instruments
+    # Initialize instruments
     left_pipette = protocol.load_instrument(
         LEFT_PIPETTE_NAME, LEFT_PIPETTE_MOUNT, tip_racks=[p20tiprack]
     )
@@ -107,7 +106,7 @@ def run(protocol: protocol_api.ProtocolContext):
         RIGHT_PIPETTE_NAME, RIGHT_PIPETTE_MOUNT, tip_racks=[p300tiprack]
     )
 
-    # label wells to categories
+    # Label wells to categories
     categories = {
         "patients": well_plate_patient.wells()[:20],
         "doctors": {
@@ -123,6 +122,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "equipment": well_plate_equipment.wells()[:20],
         "surfaces": well_plate_surfaces.wells()[:60],
     }
+
+    # Create well_plate_volumes dictionary
     well_plate_volumes = {
         "shift": {
             well: initial_media_amount
@@ -135,11 +136,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "surface": {well: initial_media_amount for well in categories["surfaces"]},
     }
 
-    # name common variables
+    # Initialize common variables
     source_well = tuberack.wells()[0]
+    global source_well_volume
     source_well_volume = tuberack.wells()[0].max_volume
     source_well_bacteria = tuberack.wells()[1]
-    source_well_bacteria_volume = tuberack.wells()[1].max_volume # or actual amount of bacteria in tube
+    source_well_bacteria_volume = tuberack.wells()[1].max_volume  # or actual amount of bacteria in tube
     patient_zero_well = categories["patients"][0]  # location for patient zero
 
     right_pipette.transfer(
@@ -148,12 +150,10 @@ def run(protocol: protocol_api.ProtocolContext):
     source_well_volume = source_well_volume - initial_bacteria_amount
 
     def fill_wells_with_media(target_wells, amount_of_media, source_well):
-        global source_well_volume  # Make source_well_volume global to update it within this function
+        global source_well_volume 
         aspiration_zone = determine_aspiration_zone(source_well_volume)
         source_well_aspiration_zone = (
-            source_well
-            if aspiration_zone == "bottom"
-            else source_well.top(aspiration_zone)
+            source_well if aspiration_zone == "bottom" else source_well.top(aspiration_zone)
         )
         right_pipette.pick_up_tip()
         for well in target_wells:
@@ -170,23 +170,102 @@ def run(protocol: protocol_api.ProtocolContext):
                 protocol.pause("No liquid in tube rack, well 0")
                 return
         right_pipette.drop_tip()
-        
-        fill_wells_with_media(categories["patients"], initial_media_amount, source_well)
-        fill_wells_with_media(categories["doctors"]["shift_one"], initial_media_amount, source_well)
-        fill_wells_with_media(categories["nurses"]["shift_one"], initial_media_amount, source_well)
-        fill_wells_with_media(categories["surfaces"], initial_media_amount, source_well)
-        fill_wells_with_media(categories["equipment"], initial_media_amount, source_well)
-        
-        #infect patient zero
-        left_pipette.transfer(
-            bacteria_transfer_amount, source_well_bacteria, patient_zero_well
-        )
-        #update volumes of in source well and patient zero well
-        source_well_bacteria_volume = source_well_bacteria_volume - bacteria_transfer_amount
-        well_plate_volumes["patient"][patient_zero_well] += bacteria_transfer_amount
-        
 
+    fill_wells_with_media(categories["patients"], initial_media_amount, source_well)
+    fill_wells_with_media(categories["doctors"]["shift_one"], initial_media_amount, source_well)
+    fill_wells_with_media(categories["nurses"]["shift_one"], initial_media_amount, source_well)
+    fill_wells_with_media(categories["surfaces"], initial_media_amount, source_well)
+    fill_wells_with_media(categories["equipment"], initial_media_amount, source_well)
 
+    # Infect patient zero
+    left_pipette.transfer(
+        bacteria_transfer_amount, source_well_bacteria, patient_zero_well
+    )
+    # Update volumes of in source well and patient zero well
+    source_well_bacteria_volume = source_well_bacteria_volume - bacteria_transfer_amount
+    well_plate_volumes["patient"][patient_zero_well] += bacteria_transfer_amount
+
+    # Simulate interactions and bacteria transfer with probability
+    def simulate_interaction(source_well, target_well, interaction_type):
+        if random.random() < interaction_probabilities[interaction_type]:
+            transfer_amount = min(
+                bacteria_transfer_amount, well_plate_volumes["patient"][source_well]
+            )
+            if transfer_amount > 0:
+                left_pipette.transfer(
+                    transfer_amount, source_well, target_well, new_tip="always"
+                )
+                protocol.delay(seconds=time_amount)
+                # Update volumes in the source and target wells
+                well_plate_volumes["patient"][source_well] -= transfer_amount
+                well_plate_volumes["shift"][target_well] += transfer_amount
+
+    # Simulate interactions for each shift using random.choices
+    def simulate_shift(shift):
+        for doctor_well in categories["doctors"][shift]:
+            if random.choices(
+                [True, False],
+                [
+                    interaction_probabilities["doctor_patient"],
+                    1 - interaction_probabilities["doctor_patient"],
+                ],
+            )[0]:
+                simulate_interaction(patient_zero_well, doctor_well, "doctor_patient")
+            for equipment_well in categories["equipment"]:
+                if random.choices(
+                    [True, False],
+                    [
+                        interaction_probabilities["doctor_equipment"],
+                        1 - interaction_probabilities["doctor_equipment"],
+                    ],
+                )[0]:
+                    simulate_interaction(
+                        doctor_well, equipment_well, "doctor_equipment"
+                    )
+            for surface_well in categories["surfaces"]:
+                if random.choices(
+                    [True, False],
+                    [
+                        interaction_probabilities["doctor_surface"],
+                        1 - interaction_probabilities["doctor_surface"],
+                    ],
+                )[0]:
+                    simulate_interaction(doctor_well, surface_well, "doctor_surface")
+
+        for nurse_well in categories["nurses"][shift]:
+            if random.choices(
+                [True, False],
+                [
+                    interaction_probabilities["nurse_patient"],
+                    1 - interaction_probabilities["nurse_patient"],
+                ],
+            )[0]:
+                simulate_interaction(patient_zero_well, nurse_well, "nurse_patient")
+            for equipment_well in categories["equipment"]:
+                if random.choices(
+                    [True, False],
+                    [
+                        interaction_probabilities["nurse_equipment"],
+                        1 - interaction_probabilities["nurse_equipment"],
+                    ],
+                )[0]:
+                    simulate_interaction(nurse_well, equipment_well, "nurse_equipment")
+            for surface_well in categories["surfaces"]:
+                if random.choices(
+                    [True, False],
+                    [
+                        interaction_probabilities["nurse_surface"],
+                        1 - interaction_probabilities["nurse_surface"],
+                    ],
+                )[0]:
+                    simulate_interaction(nurse_well, surface_well, "nurse_surface")
+
+    for shift in shifts:
+        protocol.comment(f"Starting {shift} simulation")
+        simulate_shift(shift)
+        protocol.comment(f"Completed {shift} simulation")
+
+    protocol.comment("Simulation complete")
 
 
 
