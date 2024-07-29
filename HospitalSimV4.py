@@ -29,6 +29,7 @@ interaction_probabilities = {
     "doctor_equipment": 0.15,
     "nurse_surface": 0.10,
     "doctor_surface": 0.05,
+    "patient_equipment": 0.05,
 }
 
 
@@ -61,12 +62,61 @@ class HospitalSimulation:
         self.tiprack_300 = self.protocol.load_labware(
             "opentrons_96_filtertiprack_200ul", "9"
         )
-        self.reservoir = self.protocol.load_labware("nest_12_reservoir_15ml", "5")
+        self.reservoir = self.protocol.load_labware(
+            "opentrons_6_tuberack_falcon_50ml_conical", "5"
+        )
 
         self.temp_module = self.protocol.load_module("temperature module", "10")
         self.temp_plate = self.temp_module.load_labware(
             "opentronsappliedbiosystems_96_aluminumblock_200ul"
         )
+
+    def fill_all_wells_with_media(self, iterations=1):
+        self.protocol.comment("Filling all wells with initial media...")
+        source_well = self.media
+        source_well_volume = 15000  # Assuming a 15mL reservoir well
+
+        all_target_wells = []
+        for category in self.categories:
+            if category in ["doctor", "nurse"]:
+                for shift in SHIFTS:
+                    all_target_wells.extend(self.categories[category][shift])
+            else:
+                all_target_wells.extend(self.categories[category])
+
+        for i in range(iterations):
+            self.p300.pick_up_tip()  # Pick up a new tip at the start of each iteration
+            for well in all_target_wells:
+                aspiration_zone = self.determine_aspiration_zone(source_well_volume)
+                if aspiration_zone == "bottom":
+                    source_well_aspiration_zone = source_well
+                else:
+                    source_well_aspiration_zone = source_well.top(aspiration_zone)
+
+                self.p300.transfer(
+                    initial_media_amount,
+                    source_well_aspiration_zone,
+                    well,
+                    new_tip="never",
+                )
+                self.p300.blow_out()
+                source_well_volume -= initial_media_amount
+                self.protocol.comment(f"Remaining volume: {source_well_volume}")
+                self.protocol.comment(f"Aspiration zone: {aspiration_zone}")
+
+                if source_well_volume <= 0:
+                    self.p300.drop_tip()  # Drop the tip before pausing
+                    self.p300.home()
+                    self.protocol.pause("No liquid in media reservoir. Please refill.")
+                    source_well_volume = 15000  # Reset volume after refill
+                    self.p300.pick_up_tip()  # Pick up a new tip after refilling
+
+        self.p300.drop_tip()  # Drop the tip at the end of each iteration
+        self.p300.home()
+        if i != iterations - 1:
+            self.protocol.pause("Iteration complete. Press resume to continue.")
+
+        self.protocol.comment("All wells filled with initial media.")
 
     def setup_pipettes(self):
         self.p20 = self.protocol.load_instrument(
@@ -79,7 +129,7 @@ class HospitalSimulation:
     def setup_reagents(self):
         self.media = self.reservoir.wells()[0]
         self.bacteria = self.reservoir.wells()[1]
-        self.waste = self.reservoir.wells()[11]
+        self.waste = self.reservoir.wells()[2]
 
     def setup_categories(self):
         self.categories = {
@@ -120,6 +170,7 @@ class HospitalSimulation:
     def run_simulation(self, num_days):
         self.protocol.comment("Starting simulation setup...")
         self.temp_module.set_temperature(37)
+        self.fill_all_wells_with_media(iterations=1)
         for day in range(num_days):
             self.days_elapsed += 1
             self.protocol.comment(f"Simulating Day {day + 1}")
@@ -220,6 +271,16 @@ class HospitalSimulation:
         self.setup_volumes()
         self.p20.reset_tipracks()
         self.p300.reset_tipracks()
+
+    def determine_aspiration_zone(self, volume):
+        if volume > 1000:
+            return -2  # 2mm from top
+        elif volume > 500:
+            return -5  # 5mm from top
+        elif volume > 100:
+            return -8  # 8mm from top
+        else:
+            return "bottom"
 
 
 def run(protocol: protocol_api.ProtocolContext):
