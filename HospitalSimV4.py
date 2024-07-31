@@ -111,12 +111,15 @@ class HospitalSimulation:
                     source_well_volume = 15000  # Reset volume after refill
                     self.p300.pick_up_tip()  # Pick up a new tip after refilling
 
-        self.p300.drop_tip()  # Drop the tip at the end of each iteration
-        self.p300.home()
-        if i != iterations - 1:
-            self.protocol.pause("Iteration complete. Press resume to continue.")
+            self.p300.drop_tip()  # Drop the tip at the end of each iteration
+            self.p300.home()
+            if i != iterations - 1:
+                self.protocol.pause("Iteration complete. Press resume to continue.")
 
         self.protocol.comment("All wells filled with initial media.")
+    
+        # Add pause for manual bacteria addition
+        self.protocol.pause("Media distribution complete. Please manually add initial bacteria to the first well of the patient plate, then resume the protocol.")
 
     def setup_pipettes(self):
         self.p20 = self.protocol.load_instrument(
