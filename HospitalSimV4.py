@@ -117,9 +117,11 @@ class HospitalSimulation:
                 self.protocol.pause("Iteration complete. Press resume to continue.")
 
         self.protocol.comment("All wells filled with initial media.")
-    
+
         # Add pause for manual bacteria addition
-        self.protocol.pause("Media distribution complete. Please manually add initial bacteria to the first well of the patient plate, then resume the protocol.")
+        self.protocol.pause(
+            "Media distribution complete. Please manually add initial bacteria to the first well of the patient plate, then resume the protocol."
+        )
 
     def setup_pipettes(self):
         self.p20 = self.protocol.load_instrument(
@@ -219,6 +221,12 @@ class HospitalSimulation:
             self.update_well_volume(source_category, source_well, -amount, shift)
             self.update_well_volume(target_category, target_well, amount, shift)
             self.p20.transfer(amount, source_well, target_well, new_tip="always")
+            return True
+        else:
+            self.protocol.comment(
+                f"Transfer failed: Insufficient volume in {source_category} {source_well}. Required: {amount}, Available: {source_volume}"
+            )
+            return False
 
     def get_well_volume(self, category, well, shift=None):
         if category in ["doctor", "nurse"]:
