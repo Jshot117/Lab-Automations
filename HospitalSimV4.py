@@ -44,8 +44,9 @@ class HospitalSimulation:
         self.days_elapsed = 0
 
     def setup_labware(self):
-        self.patient_plate = self.protocol.load_labware(
-            "corning_96_wellplate_360ul_flat", "1", "Patient Plate"
+        self.temp_module = self.protocol.load_module("temperature module", "10")
+        self.patient_plate = self.temp_module.load_labware(
+            "corning_96_wellplate_360ul_flat"
         )
         self.staff_plate = self.protocol.load_labware(
             "corning_96_wellplate_360ul_flat", "2", "Staff Plate"
@@ -64,11 +65,6 @@ class HospitalSimulation:
         )
         self.reservoir = self.protocol.load_labware(
             "opentrons_6_tuberack_falcon_50ml_conical", "5"
-        )
-
-        self.temp_module = self.protocol.load_module("temperature module", "10")
-        self.temp_plate = self.temp_module.load_labware(
-            "corning_96_wellplate_360ul_flat"
         )
 
     def fill_all_wells_with_media(self, iterations=1):
@@ -138,7 +134,7 @@ class HospitalSimulation:
 
     def setup_categories(self):
         self.categories = {
-            "patient": self.temp_plate.wells()[:20],
+            "patient": self.patient_plate.wells()[:20],
             "doctor": {
                 shift: self.staff_plate.wells()[i : i + 6]
                 for i, shift in zip([0, 18, 36], SHIFTS)
