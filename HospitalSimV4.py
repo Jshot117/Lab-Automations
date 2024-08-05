@@ -45,16 +45,16 @@ class HospitalSimulation:
 
     def setup_labware(self):
         self.patient_plate = self.protocol.load_labware(
-            "opentronsappliedbiosystems_96_aluminumblock_200ul", "1", "Patient Plate"
+            "corning_96_wellplate_360ul_flat", "1", "Patient Plate"
         )
         self.staff_plate = self.protocol.load_labware(
-            "opentronsappliedbiosystems_96_aluminumblock_200ul", "2", "Staff Plate"
+            "corning_96_wellplate_360ul_flat", "2", "Staff Plate"
         )
         self.equipment_plate = self.protocol.load_labware(
-            "opentronsappliedbiosystems_96_aluminumblock_200ul", "3", "Equipment Plate"
+            "corning_96_wellplate_360ul_flat", "3", "Equipment Plate"
         )
         self.surface_plate = self.protocol.load_labware(
-            "opentronsappliedbiosystems_96_aluminumblock_200ul", "4", "Surface Plate"
+            "corning_96_wellplate_360ul_flat", "4", "Surface Plate"
         )
         self.tiprack_20 = self.protocol.load_labware(
             "opentrons_96_filtertiprack_20ul", "6"
@@ -68,7 +68,7 @@ class HospitalSimulation:
 
         self.temp_module = self.protocol.load_module("temperature module", "10")
         self.temp_plate = self.temp_module.load_labware(
-            "opentronsappliedbiosystems_96_aluminumblock_200ul"
+            "corning_96_wellplate_360ul_flat"
         )
 
     def fill_all_wells_with_media(self, iterations=1):
