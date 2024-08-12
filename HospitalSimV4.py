@@ -202,7 +202,7 @@ class HospitalSimulation:
         self.protocol.comment(f"Starting {shift} shift")
         steps = SHIFT_DURATION // SIMULATION_STEP
         self.protocol.comment(f"Number of steps: {steps}")
-        for _ in range(10):
+        for _ in range(20):
             self.simulate_interactions(shift)
         self.end_shift(shift)
 
