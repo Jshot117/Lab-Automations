@@ -14,8 +14,7 @@ SHIFTS = ["morning", "afternoon", "night"]
 SHIFT_DURATION = 8 * 60 * 60  # 8 hours in seconds
 MAINTENANCE_DURATION = 30 * 60  # 30 minutes in seconds
 MAINTENANCE_FREQUENCY = 2  # times per day
-SIMULATION_STEP = 600  # 10 minutes in seconds
-
+SIMULATION_STEP =  600 # 10 minutes in seconds 
 # Adjustable variables
 initial_bacteria_amount = 100
 initial_media_amount = 50
@@ -24,12 +23,25 @@ cleaning_media_amount = 100
 
 interaction_probabilities = {
     "nurse_patient": 0.50,
-    "doctor_patient": 0.30,
-    "nurse_equipment": 0.20,
-    "doctor_equipment": 0.15,
     "nurse_surface": 0.10,
+    "nurse_equipment": 0.20,
+    "nurse_doctor": 0.20,
+    "doctor_patient": 0.30,
+    "doctor_equipment": 0.15,
     "doctor_surface": 0.05,
+    "doctor_nurse": 0.35,
     "patient_equipment": 0.05,
+    "patient_surface": 0.10,
+    "patient_nurse": 0.25,
+    "patient_doctor": 0.60,
+    "equipment_surface": 0.05,
+    "equipment_nurse": 0.10,
+    "equipment_doctor": 0.15,
+    "equipment_patient": 0.20,
+    "surface_nurse": 0.10,
+    "surface_doctor": 0.15,
+    "surface_patient": 0.20,
+    "surface_equipment": 0.05,
 }
 
 
@@ -42,6 +54,7 @@ class HospitalSimulation:
         self.setup_categories()
         self.setup_volumes()
         self.days_elapsed = 0
+        self.tips_used_count = 0
 
     def setup_labware(self):
         self.temp_module = self.protocol.load_module("temperature module", "10")
@@ -57,8 +70,11 @@ class HospitalSimulation:
         self.surface_plate = self.protocol.load_labware(
             "corning_96_wellplate_360ul_flat", "4", "Surface Plate"
         )
-        self.tiprack_20 = self.protocol.load_labware(
+        self.tiprack_20_one = self.protocol.load_labware(
             "opentrons_96_filtertiprack_20ul", "6"
+        )
+        self.tiprack_20_two = self.protocol.load_labware(
+            "opentrons_96_filtertiprack_20ul", "8"
         )
         self.tiprack_300 = self.protocol.load_labware(
             "opentrons_96_filtertiprack_200ul", "9"
@@ -121,7 +137,7 @@ class HospitalSimulation:
 
     def setup_pipettes(self):
         self.p20 = self.protocol.load_instrument(
-            "p20_single_gen2", "left", tip_racks=[self.tiprack_20]
+            "p20_single_gen2", "left", tip_racks=[self.tiprack_20_one, self.tiprack_20_two]
         )
         self.p300 = self.protocol.load_instrument(
             "p300_single_gen2", "right", tip_racks=[self.tiprack_300]
@@ -185,7 +201,8 @@ class HospitalSimulation:
     def run_shift(self, shift):
         self.protocol.comment(f"Starting {shift} shift")
         steps = SHIFT_DURATION // SIMULATION_STEP
-        for _ in range(steps):
+        self.protocol.comment(f"Number of steps: {steps}")
+        for _ in range(10):
             self.simulate_interactions(shift)
         self.end_shift(shift)
 
@@ -193,8 +210,11 @@ class HospitalSimulation:
         for interaction, probability in interaction_probabilities.items():
             if random.random() < probability:
                 source_category, target_category = interaction.split("_")
+                self.protocol.comment(
+                    f"source category: {source_category}, target category: {target_category}"
+                )
                 source_well = self.get_random_well(source_category, shift)
-                target_well = self.get_random_well(target_category)
+                target_well = self.get_random_well(target_category, shift)
                 self.transfer_bacteria(
                     source_category,
                     source_well,
@@ -206,6 +226,7 @@ class HospitalSimulation:
 
     def get_random_well(self, category, shift=None):
         if category in ["doctor", "nurse"]:
+            self.protocol.comment(f"Category: {category}, Shift: {shift}")
             return random.choice(self.categories[category][shift])
         return random.choice(self.categories[category])
 
@@ -216,7 +237,9 @@ class HospitalSimulation:
         if source_volume >= amount:
             self.update_well_volume(source_category, source_well, -amount, shift)
             self.update_well_volume(target_category, target_well, amount, shift)
-            self.p20.transfer(amount, source_well, target_well, new_tip="always")
+            self.p20.transfer(amount, source_well, target_well, new_tip="once")
+            self.tips_used_count += 1
+            self.protocol.comment(f" tips used is {self.tips_used_count}")
             return True
         else:
             self.protocol.comment(
@@ -258,18 +281,18 @@ class HospitalSimulation:
         finally:
             self.p300.drop_tip()
 
-    def transfer_bacteria(
-        self, source_category, source_well, target_category, target_well, amount, shift
-    ):
-        source_volume = self.get_well_volume(source_category, source_well, shift)
-        if source_volume >= amount:
-            self.p20.pick_up_tip()
-            try:
-                self.p20.transfer(amount, source_well, target_well, new_tip="never")
-                self.update_well_volume(source_category, source_well, -amount, shift)
-                self.update_well_volume(target_category, target_well, amount, shift)
-            finally:
-                self.p20.drop_tip()
+    # def transfer_bacteria(
+    #     self, source_category, source_well, target_category, target_well, amount, shift
+    # ):
+    #     source_volume = self.get_well_volume(source_category, source_well, shift)
+    #     if source_volume >= amount:
+    #         self.p20.pick_up_tip()
+    #         try:
+    #             self.p20.transfer(amount, source_well, target_well, new_tip="never")
+    #             self.update_well_volume(source_category, source_well, -amount, shift)
+    #             self.update_well_volume(target_category, target_well, amount, shift)
+    #         finally:
+    #             self.p20.drop_tip()
 
     def perform_maintenance(self):
         self.protocol.pause(
