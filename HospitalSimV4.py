@@ -204,7 +204,7 @@ class HospitalSimulation:
         self.protocol.comment(f"Number of steps: {steps}")
         for _ in range(20):
             self.simulate_interactions(shift)
-        self.end_shift(shift)
+        # self.end_shift(shift)
 
     def simulate_interactions(self, shift):
         for interaction, probability in interaction_probabilities.items():
@@ -258,28 +258,28 @@ class HospitalSimulation:
         else:
             self.volumes[category][well] += amount
 
-    def end_shift(self, shift):
-        for category in ["doctor", "nurse"]:
-            for well in self.categories[category][shift]:
-                self.clean_well(category, well, shift)
-        if shift == SHIFTS[-1]:  # End of day
-            for well in self.categories["patient"]:
-                self.clean_well("patient", well)
+    # def end_shift(self, shift):
+    #     for category in ["doctor", "nurse"]: 
+    #         for well in self.categories[category][shift]:
+    #             self.clean_well(category, well, shift)
+    #     if shift == SHIFTS[-1]:  # End of day
+    #         for well in self.categories["patient"]:
+    #             self.clean_well("patient", well)
 
-    def clean_well(self, category, well, shift=None):
-        self.p300.pick_up_tip()
-        try:
-            self.p300.transfer(cleaning_media_amount, self.media, well, new_tip="never")
-            self.p300.mix(3, 100, well)
-            self.p300.transfer(cleaning_media_amount, well, self.waste, new_tip="never")
-            self.update_well_volume(
-                category,
-                well,
-                initial_media_amount - self.get_well_volume(category, well, shift),
-                shift,
-            )
-        finally:
-            self.p300.drop_tip()
+    # def clean_well(self, category, well, shift=None):
+    #     self.p300.pick_up_tip()
+    #     try:
+    #         self.p300.transfer(cleaning_media_amount, self.media, well, new_tip="never")
+    #         self.p300.mix(3, 100, well)
+    #         self.p300.transfer(cleaning_media_amount, well, self.waste, new_tip="never")
+    #         self.update_well_volume(
+    #             category,
+    #             well,
+    #             initial_media_amount - self.get_well_volume(category, well, shift),
+    #             shift,
+    #         )
+    #     finally:
+    #         self.p300.drop_tip()
 
     # def transfer_bacteria(
     #     self, source_category, source_well, target_category, target_well, amount, shift
