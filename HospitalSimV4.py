@@ -207,23 +207,30 @@ class HospitalSimulation:
         # self.end_shift(shift)
 
     def simulate_interactions(self, shift):
-        for interaction, probability in interaction_probabilities.items():
-            if random.random() < probability:
-                source_category, target_category = interaction.split("_")
-                self.protocol.comment(
-                    f"source category: {source_category}, target category: {target_category}"
-                )
-                source_well = self.get_random_well(source_category, shift)
-                target_well = self.get_random_well(target_category, shift)
-                self.transfer_bacteria(
-                    source_category,
-                    source_well,
-                    target_category,
-                    target_well,
-                    bacteria_transfer_amount,
-                    shift,
-                )
-
+        # Create lists of interactions and their corresponding probabilities
+        interactions = list(interaction_probabilities.keys())
+        probabilities = list(interaction_probabilities.values())
+        
+        # Determine how many interactions to simulate (you can adjust this)
+        num_interactions = random.randint(1, len(interactions))
+        
+        # Use random.choices to select interactions based on their probabilities
+        selected_interactions = random.choices(interactions, weights=probabilities, k=num_interactions)
+        
+        
+        for interaction in selected_interactions:
+            source_category, target_category = interaction.split("_")
+            self.protocol.comment(f"Interaction: {interaction}")
+            source_well = self.get_random_well(source_category, shift)
+            target_well = self.get_random_well(target_category, shift)
+            self.transfer_bacteria(
+                source_category,
+                source_well,
+                target_category,
+                target_well,
+                bacteria_transfer_amount,
+                shift,
+            )
     def get_random_well(self, category, shift=None):
         if category in ["doctor", "nurse"]:
             self.protocol.comment(f"Category: {category}, Shift: {shift}")
@@ -298,6 +305,7 @@ class HospitalSimulation:
         self.protocol.pause(
             f"Day {self.days_elapsed} maintenance. Please refill tips, media, and reset well plates. Resume when ready."
         )
+        self.protocol.comment("Performing maintenance...")
         self.setup_volumes()
         self.p20.reset_tipracks()
         self.p300.reset_tipracks()
