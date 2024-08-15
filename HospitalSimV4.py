@@ -14,11 +14,11 @@ SHIFTS = ["morning", "afternoon", "night"]
 SHIFT_DURATION = 8 * 60 * 60  # 8 hours in seconds
 MAINTENANCE_DURATION = 30 * 60  # 30 minutes in seconds
 MAINTENANCE_FREQUENCY = 2  # times per day
-SIMULATION_STEP =  600 # 10 minutes in seconds 
+SIMULATION_STEP = 600  # 10 minutes in seconds
 # Adjustable variables
 initial_bacteria_amount = 100
 initial_media_amount = 50
-bacteria_transfer_amount = 50
+bacteria_transfer_amount = 10
 cleaning_media_amount = 100
 
 interaction_probabilities = {
@@ -44,6 +44,14 @@ interaction_probabilities = {
     "surface_equipment": 0.05,
 }
 
+cleaning_probabilities = {
+    "nurse": 0.25,
+    "doctor": 0.30,
+    "patient": 0.10,
+    "equipment": 0.15,
+    "surface": 0.05,
+}
+
 
 class HospitalSimulation:
     def __init__(self, protocol: protocol_api.ProtocolContext):
@@ -55,6 +63,7 @@ class HospitalSimulation:
         self.setup_volumes()
         self.days_elapsed = 0
         self.tips_used_count = 0
+        self.number_of_cleans = 0
 
     def setup_labware(self):
         self.temp_module = self.protocol.load_module("temperature module", "10")
@@ -62,25 +71,34 @@ class HospitalSimulation:
             "corning_96_wellplate_360ul_flat"
         )
         self.staff_plate = self.protocol.load_labware(
-            "corning_96_wellplate_360ul_flat", "2", "Staff Plate"
+            "corning_96_wellplate_360ul_flat", "7", "Staff Plate"
         )
         self.equipment_plate = self.protocol.load_labware(
-            "corning_96_wellplate_360ul_flat", "3", "Equipment Plate"
+            "corning_96_wellplate_360ul_flat", "8", "Equipment Plate"
         )
         self.surface_plate = self.protocol.load_labware(
-            "corning_96_wellplate_360ul_flat", "4", "Surface Plate"
+            "corning_96_wellplate_360ul_flat", "11", "Surface Plate"
         )
         self.tiprack_20_one = self.protocol.load_labware(
             "opentrons_96_filtertiprack_20ul", "6"
         )
         self.tiprack_20_two = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "8"
+            "opentrons_96_filtertiprack_20ul", "5"
+        )
+        self.tiprack_20_three = self.protocol.load_labware(
+            "opentrons_96_filtertiprack_20ul", "4"
+        )
+        self.tiprack_20_four = self.protocol.load_labware(
+            "opentrons_96_filtertiprack_20ul", "1"
+        )
+        self.tiprack_20_five = self.protocol.load_labware(
+            "opentrons_96_filtertiprack_20ul", "2"
         )
         self.tiprack_300 = self.protocol.load_labware(
             "opentrons_96_filtertiprack_200ul", "9"
         )
         self.reservoir = self.protocol.load_labware(
-            "opentrons_6_tuberack_falcon_50ml_conical", "5"
+            "opentrons_6_tuberack_falcon_50ml_conical", "3"
         )
 
     def fill_all_wells_with_media(self, iterations=1):
@@ -137,7 +155,15 @@ class HospitalSimulation:
 
     def setup_pipettes(self):
         self.p20 = self.protocol.load_instrument(
-            "p20_single_gen2", "left", tip_racks=[self.tiprack_20_one, self.tiprack_20_two]
+            "p20_single_gen2",
+            "left",
+            tip_racks=[
+                self.tiprack_20_one,
+                self.tiprack_20_two,
+                self.tiprack_20_three,
+                self.tiprack_20_four,
+                self.tiprack_20_five,
+            ],
         )
         self.p300 = self.protocol.load_instrument(
             "p300_single_gen2", "right", tip_racks=[self.tiprack_300]
@@ -202,22 +228,24 @@ class HospitalSimulation:
         self.protocol.comment(f"Starting {shift} shift")
         steps = SHIFT_DURATION // SIMULATION_STEP
         self.protocol.comment(f"Number of steps: {steps}")
-        for _ in range(20):
+        for _ in range(9):
             self.simulate_interactions(shift)
+        self.cleaning_protocol(shift)
         # self.end_shift(shift)
 
     def simulate_interactions(self, shift):
         # Create lists of interactions and their corresponding probabilities
         interactions = list(interaction_probabilities.keys())
         probabilities = list(interaction_probabilities.values())
-        
+
         # Determine how many interactions to simulate (you can adjust this)
         num_interactions = random.randint(1, len(interactions))
-        
+
         # Use random.choices to select interactions based on their probabilities
-        selected_interactions = random.choices(interactions, weights=probabilities, k=num_interactions)
-        
-        
+        selected_interactions = random.choices(
+            interactions, weights=probabilities, k=num_interactions
+        )
+
         for interaction in selected_interactions:
             source_category, target_category = interaction.split("_")
             self.protocol.comment(f"Interaction: {interaction}")
@@ -231,6 +259,7 @@ class HospitalSimulation:
                 bacteria_transfer_amount,
                 shift,
             )
+
     def get_random_well(self, category, shift=None):
         if category in ["doctor", "nurse"]:
             self.protocol.comment(f"Category: {category}, Shift: {shift}")
@@ -265,28 +294,34 @@ class HospitalSimulation:
         else:
             self.volumes[category][well] += amount
 
-    # def end_shift(self, shift):
-    #     for category in ["doctor", "nurse"]: 
-    #         for well in self.categories[category][shift]:
-    #             self.clean_well(category, well, shift)
-    #     if shift == SHIFTS[-1]:  # End of day
-    #         for well in self.categories["patient"]:
-    #             self.clean_well("patient", well)
+    def cleaning_protocol(self, shift):
+        for category in ["doctor", "nurse"]:
+            for well in self.categories[category][shift]:
+                self.clean_well(category, well, shift)
+        if shift == SHIFTS[-1]:  # End of day
+            for category in ["equipment", "surface"]:
+                for well in self.categories[category]:
+                    self.clean_well(category, well, shift)
+            for well in self.categories["patient"]:
+                self.clean_well("patient", well)
 
-    # def clean_well(self, category, well, shift=None):
-    #     self.p300.pick_up_tip()
-    #     try:
-    #         self.p300.transfer(cleaning_media_amount, self.media, well, new_tip="never")
-    #         self.p300.mix(3, 100, well)
-    #         self.p300.transfer(cleaning_media_amount, well, self.waste, new_tip="never")
-    #         self.update_well_volume(
-    #             category,
-    #             well,
-    #             initial_media_amount - self.get_well_volume(category, well, shift),
-    #             shift,
-    #         )
-    #     finally:
-    #         self.p300.drop_tip()
+    def clean_well(self, category, well, shift=None):
+        prob_of_cleaning = cleaning_probabilities[category]
+        if random.random() < prob_of_cleaning:
+            self.protocol.comment(f"Cleaning {category} well {well} this is the {self.number_of_cleans} cleaning done")
+            self.p300.pick_up_tip()
+            try:
+                self.p300.transfer(cleaning_media_amount, self.media, well, new_tip="never")
+                self.p300.mix(3, 100, well)
+                self.p300.transfer(cleaning_media_amount, well, self.waste, new_tip="never")
+                self.update_well_volume(
+                    category,
+                    well,
+                    initial_media_amount - self.get_well_volume(category, well, shift),
+                    shift,
+                )
+            finally:
+                self.p300.drop_tip()
 
     # def transfer_bacteria(
     #     self, source_category, source_well, target_category, target_well, amount, shift
