@@ -19,7 +19,7 @@ SIMULATION_STEP = 600  # 10 minutes in seconds
 initial_bacteria_amount = 100
 initial_media_amount = 50
 bacteria_transfer_amount = 10
-cleaning_media_amount = 100
+cleaning_media_amount = 50
 
 interaction_probabilities = {
     "nurse_patient": 0.50,
@@ -219,8 +219,7 @@ class HospitalSimulation:
             self.protocol.comment(f"Simulating Day {day + 1}")
             for shift in SHIFTS:
                 self.run_shift(shift)
-            if day % (24 // MAINTENANCE_FREQUENCY) == 0:
-                self.perform_maintenance()
+            self.perform_maintenance()
         self.temp_module.deactivate()
         self.protocol.comment("Simulation complete")
 
@@ -270,7 +269,8 @@ class HospitalSimulation:
         self, source_category, source_well, target_category, target_well, amount, shift
     ):
         source_volume = self.get_well_volume(source_category, source_well, shift)
-        if source_volume >= amount:
+        target_volume = self.get_well_volume(target_category, target_well, shift)
+        if source_volume >= amount and amount + target_volume <= 340:
             self.update_well_volume(source_category, source_well, -amount, shift)
             self.update_well_volume(target_category, target_well, amount, shift)
             self.p20.transfer(amount, source_well, target_well, new_tip="once")
@@ -278,9 +278,14 @@ class HospitalSimulation:
             self.protocol.comment(f" tips used is {self.tips_used_count}")
             return True
         else:
-            self.protocol.comment(
-                f"Transfer failed: Insufficient volume in {source_category} {source_well}. Required: {amount}, Available: {source_volume}"
-            )
+            if source_volume >= amount:
+                self.protocol.comment(
+                    f"Transfer failed: Insufficient volume in {source_category} {source_well}. Required: {amount}, Available: {source_volume}"
+                )
+            else:
+                self.protocol.comment(
+                    f"Transfer failed: too much volume in {target_category} {target_well}. Required: {amount}, Available: {target_volume}"
+                )
             return False
 
     def get_well_volume(self, category, well, shift=None):
@@ -308,22 +313,30 @@ class HospitalSimulation:
     def clean_well(self, category, well, shift=None):
         prob_of_cleaning = cleaning_probabilities[category]
         if random.random() < prob_of_cleaning:
-            self.protocol.comment(f"Cleaning {category} well {well} this is the {self.number_of_cleans} cleaning done")
-            self.p300.pick_up_tip()
-            try:
-                self.p300.transfer(cleaning_media_amount, self.media, well, new_tip="never")
-                self.p300.mix(3, 100, well)
-                self.p300.transfer(cleaning_media_amount, well, self.waste, new_tip="never")
-                self.update_well_volume(
-                    category,
-                    well,
-                    initial_media_amount - self.get_well_volume(category, well, shift),
-                    shift,
-                )
-            finally:
-                self.p300.drop_tip()
+            self.protocol.comment(
+                f"Cleaning {category} well {well} this is the {self.number_of_cleans} cleaning done"
+            )
 
-    # def transfer_bacteria(
+            if (
+                self.get_well_volume(category=category, well=well, shift=shift) >= cleaning_media_amount
+                and self.get_well_volume(category=category, well=well, shift=shift)
+                <= 240
+            ):
+                self.p300.pick_up_tip()
+                self.p300.transfer(
+                    cleaning_media_amount, self.media, well, new_tip="never"
+                )
+                self.p300.mix(3, cleaning_media_amount, well)
+                self.p300.transfer(
+                    cleaning_media_amount, well, self.waste, new_tip="never"
+                )
+                self.p300.drop_tip()
+                self.protocol.comment(f"Cleaning {category} well {well} done")
+            else:
+                self.protocol.comment(
+                    f"Cleaning {category} well {well} could not be done"
+                )
+
     #     self, source_category, source_well, target_category, target_well, amount, shift
     # ):
     #     source_volume = self.get_well_volume(source_category, source_well, shift)
@@ -359,4 +372,4 @@ class HospitalSimulation:
 def run(protocol: protocol_api.ProtocolContext):
     protocol.comment("Initializing Hospital Simulation...")
     simulation = HospitalSimulation(protocol)
-    simulation.run_simulation(num_days=1)  # Run for 1 day
+    simulation.run_simulation(num_days=5)  # Run for 1 day
