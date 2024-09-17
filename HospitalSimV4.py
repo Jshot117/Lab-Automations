@@ -4,7 +4,7 @@ from opentrons import protocol_api, types
 
 metadata = {
     "protocolName": "Hospital Simulation V4.3",
-    "author": "Jonnathan Saavedra & Assistant",
+    "author": "Jonnathan Saavedra",
     "description": "Optimized simulation of hospital environment",
     "apiLevel": "2.14",
 }
