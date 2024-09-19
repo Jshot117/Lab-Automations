@@ -19,7 +19,10 @@ SIMULATION_STEP = 600  # 10 minutes in seconds
 initial_bacteria_amount = 100
 initial_media_amount = 50
 bacteria_transfer_amount = 10
-cleaning_media_amount = 50
+cleaning_media_base_amount = 50
+cleaning_media_gauss_mu = 0.0
+cleaning_media_gauss_sigma = 1.0
+bacteria_transfer_settle_wait_secs = 30
 
 interaction_probabilities = {
     "nurse_patient": 0.50,
@@ -268,25 +271,16 @@ class HospitalSimulation:
     def transfer_bacteria(
         self, source_category, source_well, target_category, target_well, amount, shift
     ):
-        source_volume = self.get_well_volume(source_category, source_well, shift)
-        target_volume = self.get_well_volume(target_category, target_well, shift)
-        if source_volume >= amount and amount + target_volume <= 340:
-            self.update_well_volume(source_category, source_well, -amount, shift)
-            self.update_well_volume(target_category, target_well, amount, shift)
-            self.p20.transfer(amount, source_well, target_well, new_tip="once")
-            self.tips_used_count += 1
-            self.protocol.comment(f" tips used is {self.tips_used_count}")
-            return True
-        else:
-            if source_volume >= amount:
-                self.protocol.comment(
-                    f"Transfer failed: Insufficient volume in {source_category} {source_well}. Required: {amount}, Available: {source_volume}"
-                )
-            else:
-                self.protocol.comment(
-                    f"Transfer failed: too much volume in {target_category} {target_well}. Required: {amount}, Available: {target_volume}"
-                )
-            return False
+        self.p20.pick_up_tip()
+        self.p20.transfer(amount, source_well, target_well, new_tip="never")
+        self.protocol.delay(
+            bacteria_transfer_settle_wait_secs,
+            msg=f"Waiting for {target_well} bacteria to settle",
+        )
+        self.p20.transfer(amount, target_well, source_well, new_tip="never")
+        self.p20.drop_tip()
+        self.tips_used_count += 1
+        self.protocol.comment(f" tips used is {self.tips_used_count}")
 
     def get_well_volume(self, category, well, shift=None):
         if category in ["doctor", "nurse"]:
@@ -316,9 +310,14 @@ class HospitalSimulation:
             self.protocol.comment(
                 f"Cleaning {category} well {well} this is the {self.number_of_cleans} cleaning done"
             )
+            cleaning_media_amount = cleaning_media_base_amount + random.gauss(
+                mu=cleaning_media_gauss_mu, sigma=cleaning_media_gauss_sigma
+            )
+            mix_amount = cleaning_media_amount
 
             if (
-                self.get_well_volume(category=category, well=well, shift=shift) >= cleaning_media_amount
+                self.get_well_volume(category=category, well=well, shift=shift)
+                >= cleaning_media_amount
                 and self.get_well_volume(category=category, well=well, shift=shift)
                 <= 240
             ):
@@ -326,7 +325,7 @@ class HospitalSimulation:
                 self.p300.transfer(
                     cleaning_media_amount, self.media, well, new_tip="never"
                 )
-                self.p300.mix(3, cleaning_media_amount, well)
+                self.p300.mix(3, mix_amount, well)
                 self.p300.transfer(
                     cleaning_media_amount, well, self.waste, new_tip="never"
                 )
