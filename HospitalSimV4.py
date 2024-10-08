@@ -69,7 +69,9 @@ class HospitalSimulation:
         self.number_of_cleans = 0
 
     def setup_labware(self):
-        self.temp_module = self.protocol.load_module("temperature module", "10")
+        temp_module = self.protocol.load_module("temperature module", "10")
+        assert isinstance(temp_module, protocol_api.TemperatureModuleContext)
+        self.temp_module = temp_module
         self.patient_plate = self.temp_module.load_labware(
             "corning_96_wellplate_360ul_flat"
         )
