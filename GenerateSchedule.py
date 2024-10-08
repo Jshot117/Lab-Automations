@@ -70,25 +70,24 @@ CLEANING_PROBABILITIES = {
 }
 
 
-# This does not correspond to the positions in well plates. This gives 0 indexed
-# exclusive ranges for which well plates can be used during a shift. For example,
-# all the doctor well plates are numbered [0, 18], but for the morning shift, only
-# the well plates for doctors [0, 5] can be used. For equipment, all 20 equipment
-# well plates [0, 19] can be used at any point.The well plate number has to be
-# translated into a well plate position when generating the Opentron steps code.
+# This should correspond to positions in well plates
 WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT = {
     "patient": {shift: (0, PATIENT_WELL_COUNT) for shift in SHIFTS},
     "doctor": {
         shift: (
-            DOCTOR_WELLS_PER_SHIFT * shift_number,
-            DOCTOR_WELLS_PER_SHIFT * (shift_number + 1),
+            (DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT) * shift_number,
+            (DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT) * shift_number
+            + DOCTOR_WELLS_PER_SHIFT,
         )
         for shift_number, shift in enumerate(SHIFTS)
     },
     "nurse": {
         shift: (
-            NURSE_WELLS_PER_SHIFT * shift_number,
-            NURSE_WELLS_PER_SHIFT * (shift_number + 1),
+            (DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT) * shift_number
+            + DOCTOR_WELLS_PER_SHIFT,
+            (DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT) * shift_number
+            + DOCTOR_WELLS_PER_SHIFT
+            + NURSE_WELLS_PER_SHIFT,
         )
         for shift_number, shift in enumerate(SHIFTS)
     },
