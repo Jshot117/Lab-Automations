@@ -8,6 +8,8 @@ EVENTS_PATH = Path("simulation_events.json")
 
 SHIFTS = ["morning", "afternoon", "night"]
 SHIFT_DURATION = timedelta(hours=7)
+DAY_DURATION = timedelta(days=1)
+DAYS = 30
 
 DOCTOR_WELLS_PER_SHIFT = 6
 NURSE_WELLS_PER_SHIFT = 12
@@ -137,54 +139,61 @@ if __name__ == "__main__":
             }
         )
 
-    for shift_number, shift in enumerate(SHIFTS):
-        shift_start_time = SHIFT_DURATION * shift_number
-        time_between_interactions = SHIFT_DURATION / INTERACTIONS_PER_SHIFT
+    for day in range(DAYS):
+        daily_p20_tips_used = 0
+        for shift_number, shift in enumerate(SHIFTS):
+            shift_start_time = SHIFT_DURATION * shift_number
+            time_between_interactions = SHIFT_DURATION / INTERACTIONS_PER_SHIFT
 
-        # Create lists of interactions and their corresponding probabilities
-        interactions = list(INTERACTION_PROBABILITIES.keys())
-        probabilities = list(INTERACTION_PROBABILITIES.values())
+            # Create lists of interactions and their corresponding probabilities
+            interactions = list(INTERACTION_PROBABILITIES.keys())
+            probabilities = list(INTERACTION_PROBABILITIES.values())
 
-        # Use random.choices to select interactions based on their probabilities
-        selected_interactions = random.choices(
-            interactions, weights=probabilities, k=INTERACTIONS_PER_SHIFT
-        )
+            # Use random.choices to select interactions based on their probabilities
+            selected_interactions = random.choices(
+                interactions, weights=probabilities, k=INTERACTIONS_PER_SHIFT
+            )
 
-        for interaction_number, interaction in enumerate(selected_interactions):
-            # TODO: Set aside time for cleaning
-            interaction_time = (
-                shift_start_time + time_between_interactions * interaction_number
-            )
-            source_category, target_category = interaction.split("_")
-            add_comment_event(interaction_time, f"Interaction: {interaction}")
-            shift_source_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[source_category][
-                shift
-            ]
-            shift_target_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[target_category][
-                shift
-            ]
-            source_well_number = random.randrange(
-                shift_source_range[0], shift_source_range[1]
-            )
-            target_well_number = random.randrange(
-                shift_target_range[0], shift_target_range[1]
-            )
-            add_interaction_event(
-                interaction_time,
-                source_category,
-                source_well_number,
-                target_category,
-                target_well_number,
-                BACTERIA_TRANSFER_UL,  # TODO: Add random spread
-                shift,
-            )
-            p20_tips_used += 1
+            for interaction_number, interaction in enumerate(selected_interactions):
+                # TODO: Set aside time for cleaning
+                interaction_time = (
+                    DAY_DURATION * day
+                    + shift_start_time
+                    + time_between_interactions * interaction_number
+                )
+                source_category, target_category = interaction.split("_")
+                add_comment_event(interaction_time, f"Interaction: {interaction}")
+                shift_source_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[
+                    source_category
+                ][shift]
+                shift_target_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[
+                    target_category
+                ][shift]
+                source_well_number = random.randrange(
+                    shift_source_range[0], shift_source_range[1]
+                )
+                target_well_number = random.randrange(
+                    shift_target_range[0], shift_target_range[1]
+                )
+                add_interaction_event(
+                    interaction_time,
+                    source_category,
+                    source_well_number,
+                    target_category,
+                    target_well_number,
+                    BACTERIA_TRANSFER_UL,  # TODO: Add random spread
+                    shift,
+                )
+                p20_tips_used += 1
+                daily_p20_tips_used += 1
 
-            # TODO: Add end of shift cleaning
+                # TODO: Add end of shift cleaning
 
         # TODO: Add end of day cleaning
+        end_of_shifts_time = DAY_DURATION * day + SHIFT_DURATION * len(SHIFTS)
+        add_comment_event(end_of_shifts_time, f"Finished day {day + 1}/{DAYS}")
+        assert daily_p20_tips_used <= TOTAL_P20_TIPS
 
-    assert p20_tips_used <= TOTAL_P20_TIPS
     assert all(
         (
             simulation_events[i - 1]["seconds_after_start"]
