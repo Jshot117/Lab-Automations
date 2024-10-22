@@ -154,6 +154,8 @@ class HospitalSimulation:
             return "bottom"
 
     def sleep_seconds_after_start(self, seconds):
+        if self.protocol.is_simulating:
+            return
         sleep_until = self.start_time + timedelta(seconds=seconds)
         sleep_seconds = (sleep_until - datetime.now()).total_seconds()
         sleep(sleep_seconds)
