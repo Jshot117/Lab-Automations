@@ -182,6 +182,10 @@ class HospitalSimulation:
         self.p20.transfer(transfer_ul, target_well, source_well, new_tip="never")
         self.p20.drop_tip()
 
+    def reset_tip_racks(self):
+        self.p20.reset_tipracks()
+        self.p300.reset_tipracks()
+
 
 def run(protocol: protocol_api.ProtocolContext):
     protocol.comment("Initializing Hospital Simulation...")

@@ -9,7 +9,7 @@ EVENTS_PATH = Path("simulation_events.json")
 SHIFTS = ["morning", "afternoon", "night"]
 SHIFT_DURATION = timedelta(hours=7)
 DAY_DURATION = timedelta(days=1)
-DAYS = 30
+DAYS = 3
 
 DOCTOR_WELLS_PER_SHIFT = 6
 NURSE_WELLS_PER_SHIFT = 12
@@ -139,6 +139,15 @@ if __name__ == "__main__":
             }
         )
 
+
+    def add_reset_tiprack_event(time_since_start: timedelta):
+        simulation_events.append(
+            {
+                "type": "reset_tiprack",
+                "seconds_after_start": time_since_start.total_seconds(),
+            }
+        )
+
     for day in range(DAYS):
         daily_p20_tips_used = 0
         for shift_number, shift in enumerate(SHIFTS):
@@ -192,6 +201,7 @@ if __name__ == "__main__":
         # TODO: Add end of day cleaning
         end_of_shifts_time = DAY_DURATION * day + SHIFT_DURATION * len(SHIFTS)
         add_comment_event(end_of_shifts_time, f"Finished day {day + 1}/{DAYS}")
+        add_reset_tiprack_event(end_of_shifts_time)
         assert daily_p20_tips_used <= TOTAL_P20_TIPS
 
     assert all(

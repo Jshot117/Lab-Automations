@@ -63,6 +63,8 @@ for event in events:
         generated_lines.append(
             f"""    simulation.transfer("{source_well_plate}", "{target_well_plate}", {source_well_number}, {target_well_number}, {transfer_ul})"""
         )
+    elif event["type"] == "reset_tiprack":
+        generated_lines.append("    simulation.reset_tip_racks()")
     else:
         raise ValueError(f"unexpected event type {event['type']}")
 
