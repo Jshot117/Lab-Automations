@@ -152,12 +152,10 @@ class HospitalSimulation:
         else:
             return "bottom"
 
-    def sleep_seconds_after_start(self, seconds):
-        if self.protocol.is_simulating:
-            return
-        sleep_until = self.start_time + timedelta(seconds=seconds)
+    def sleep_seconds_after_start(self, seconds_after_start):
+        sleep_until = self.start_time + timedelta(seconds=seconds_after_start)
         sleep_seconds = (sleep_until - datetime.now()).total_seconds()
-        self.protocol.delay(sleep_seconds)
+        self.protocol.delay(sleep_seconds, msg=f"Sleeping until next interaction")
 
     def comment(self, comment):
         self.protocol.comment(comment)

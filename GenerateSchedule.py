@@ -9,7 +9,7 @@ EVENTS_PATH = Path("simulation_events.json")
 SHIFTS = ["morning", "afternoon", "night"]
 SHIFT_DURATION = timedelta(hours=7)
 DAY_DURATION = timedelta(days=1)
-DAYS = 3
+DAYS = 1
 
 DOCTOR_WELLS_PER_SHIFT = 6
 NURSE_WELLS_PER_SHIFT = 12
