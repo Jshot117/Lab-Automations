@@ -1,5 +1,4 @@
-from opentrons import protocol_api, types
-from time import sleep
+from opentrons import protocol_api
 from datetime import datetime, timedelta
 
 metadata = {
@@ -158,7 +157,7 @@ class HospitalSimulation:
             return
         sleep_until = self.start_time + timedelta(seconds=seconds)
         sleep_seconds = (sleep_until - datetime.now()).total_seconds()
-        sleep(sleep_seconds)
+        self.protocol.delay(sleep_seconds)
 
     def comment(self, comment):
         self.protocol.comment(comment)
