@@ -46,9 +46,10 @@ def get_well_plate(category: str) -> PlateTypes:
 
 
 for event in events:
-    generated_lines.append(
-        f"""    simulation.sleep_seconds_after_start({event['seconds_after_start']})"""
-    )
+    if "seconds_after_start" in event:
+        generated_lines.append(
+            f"""    simulation.sleep_seconds_after_start({event['seconds_after_start']})"""
+        )
 
     if event["type"] == "comment":
         generated_lines.append(f"""    simulation.comment("{event['comment']}")""")
@@ -63,6 +64,8 @@ for event in events:
         generated_lines.append(
             f"""    simulation.transfer("{source_well_plate}", "{target_well_plate}", {source_well_number}, {target_well_number}, {transfer_ul})"""
         )
+    elif event["type"] == "wait_for_continue":
+        generated_lines.append(f"    simulation.wait_for_continue({event['resume_at']})")
     elif event["type"] == "reset_tiprack":
         generated_lines.append("    simulation.reset_tip_racks()")
     else:

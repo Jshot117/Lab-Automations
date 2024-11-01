@@ -179,6 +179,10 @@ class HospitalSimulation:
         self.p20.transfer(transfer_ul, target_well, source_well, new_tip="never")
         self.p20.drop_tip()
 
+    def wait_for_continue(self, resume_at: int):
+        self.protocol.pause("Pausing for maintenance")
+        self.sleep_seconds_after_start(resume_at)
+
     def reset_tip_racks(self):
         self.p20.reset_tipracks()
         self.p300.reset_tipracks()

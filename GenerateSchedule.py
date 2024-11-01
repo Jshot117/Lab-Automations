@@ -139,6 +139,13 @@ if __name__ == "__main__":
             }
         )
 
+    def add_wait_for_continue_event(time_since_start: timedelta):
+        simulation_events.append(
+            {
+                "type": "wait_for_continue",
+                "resume_at": time_since_start.total_seconds(),
+            }
+        )
 
     def add_reset_tiprack_event(time_since_start: timedelta):
         simulation_events.append(
@@ -149,6 +156,10 @@ if __name__ == "__main__":
         )
 
     for day in range(DAYS):
+        if day != 0:
+            maintenance_end_time = DAY_DURATION * day
+            add_wait_for_continue_event(maintenance_end_time)
+
         daily_p20_tips_used = 0
         for shift_number, shift in enumerate(SHIFTS):
             shift_start_time = SHIFT_DURATION * shift_number
