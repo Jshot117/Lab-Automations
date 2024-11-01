@@ -217,7 +217,9 @@ if __name__ == "__main__":
 
     assert all(
         (
-            simulation_events[i - 1]["seconds_after_start"]
+            "seconds_after_start" not in simulation_events[i - 1]
+            or "seconds_after_start" not in simulation_events[i]
+            or simulation_events[i - 1]["seconds_after_start"]
             <= simulation_events[i]["seconds_after_start"]
             for i in range(1, len(simulation_events))
         )
