@@ -64,6 +64,14 @@ for event in events:
         generated_lines.append(
             f"""    simulation.transfer("{source_well_plate}", "{target_well_plate}", {source_well_number}, {target_well_number}, {transfer_ul})"""
         )
+    elif event["type"] == "clean_well":
+        clean_info = event["clean_target_info"]
+        well_category = clean_info["well_category"]
+        well_number = clean_info["well_number"]
+        clean_ul = clean_info["clean_ul"]
+        generated_lines.append(
+            f"""    simulation.clean("{well_category}", {well_number}, {clean_ul})"""
+        )
     elif event["type"] == "wait_for_continue":
         generated_lines.append(f"    simulation.wait_for_continue({event['resume_at']})")
     elif event["type"] == "reset_tiprack":

@@ -7,8 +7,15 @@ import random
 EVENTS_PATH = Path("simulation_events.json")
 
 SHIFTS = ["morning", "afternoon", "night"]
-SHIFT_DURATION = timedelta(hours=7)
+SHIFT_DURATION = timedelta(hours=6, minutes=50)
+END_OF_SHIFT_CLEAN_DURATION = timedelta(minutes=10)
+END_OF_DAY_CLEAN_DURATION = timedelta(minutes=10)
 DAY_DURATION = timedelta(days=1)
+MANUAL_SERVICE_DURATION = (
+    DAY_DURATION
+    - END_OF_DAY_CLEAN_DURATION
+    - (len(SHIFTS) * (SHIFT_DURATION + END_OF_SHIFT_CLEAN_DURATION))
+)
 DAYS = 1
 
 DOCTOR_WELLS_PER_SHIFT = 6
@@ -26,7 +33,8 @@ END_OF_SHIFT_CLEAN_COUNT = DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT
 END_OF_DAY_CLEAN_COUNT = EQUIPMENT_WELL_COUNT + SURFACE_WELL_COUNT
 TOTAL_CLEAN_COUNT = END_OF_SHIFT_CLEAN_COUNT * len(SHIFTS) + END_OF_DAY_CLEAN_COUNT
 
-MAX_INTERACTION_COUNT = TOTAL_P20_TIPS
+# 2 pipette tips are needed to clean a well
+MAX_INTERACTION_COUNT = TOTAL_P20_TIPS - 2 * TOTAL_CLEAN_COUNT
 END_OF_SHIFT_CLEAN_COUNT = DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT
 END_OF_DAY_MAX_CLEAN_COUNT = TOTAL_P300_TIPS - END_OF_SHIFT_CLEAN_COUNT * 3
 INTERACTIONS_PER_SHIFT = TOTAL_P20_TIPS // 3
@@ -130,6 +138,23 @@ if __name__ == "__main__":
             }
         )
 
+    def add_clean_well_event(
+        well_category: str,
+        well_number: int,
+        clean_ul: int | float,
+    ):
+        simulation_events.append(
+            {
+                "type": "clean_well",
+                "clean_target_info": {
+                    "well_category": well_category,
+                    "well_number": well_number,
+                    "clean_ul": clean_ul,
+                    "shift": shift,
+                },
+            }
+        )
+
     def add_comment_event(time_since_start: timedelta, comment: str):
         simulation_events.append(
             {
@@ -162,7 +187,9 @@ if __name__ == "__main__":
 
         daily_p20_tips_used = 0
         for shift_number, shift in enumerate(SHIFTS):
-            shift_start_time = SHIFT_DURATION * shift_number
+            shift_start_time = (
+                SHIFT_DURATION + END_OF_SHIFT_CLEAN_DURATION
+            ) * shift_number
             time_between_interactions = SHIFT_DURATION / INTERACTIONS_PER_SHIFT
 
             # Create lists of interactions and their corresponding probabilities
@@ -207,12 +234,26 @@ if __name__ == "__main__":
                 p20_tips_used += 1
                 daily_p20_tips_used += 1
 
-                # TODO: Add end of shift cleaning
+            # End of shift cleaning
+            for category in ["doctor", "nurse"]:
+                shift_well_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[category][
+                    shift
+                ]
+                for well in range(shift_well_range[0], shift_well_range[1]):
+                    add_clean_well_event(category, well, CLEANING_MEDIA_BASE_UL)
 
-        # TODO: Add end of day cleaning
-        end_of_shifts_time = DAY_DURATION * day + SHIFT_DURATION * len(SHIFTS)
-        add_comment_event(end_of_shifts_time, f"Finished day {day + 1}/{DAYS}")
-        add_reset_tiprack_event(end_of_shifts_time)
+        # End of day cleaning
+        for category in ["equipment", "surface"]:
+            for well in range(shift_well_range[0], shift_well_range[1]):
+                add_clean_well_event(category, well, CLEANING_MEDIA_BASE_UL)
+
+        end_of_day_time = (
+            DAY_DURATION * day
+            + (SHIFT_DURATION + END_OF_SHIFT_CLEAN_DURATION) * len(SHIFTS)
+            + END_OF_DAY_CLEAN_DURATION
+        )
+        add_comment_event(end_of_day_time, f"Finished day {day + 1}/{DAYS}")
+        add_reset_tiprack_event(end_of_day_time)
         assert daily_p20_tips_used <= TOTAL_P20_TIPS
 
     assert all(
@@ -225,3 +266,9 @@ if __name__ == "__main__":
         )
     )
     EVENTS_PATH.write_text(json.dumps(simulation_events, indent="    "))
+
+    print(
+        f"{SHIFT_DURATION} long shifts ({SHIFT_DURATION + END_OF_SHIFT_CLEAN_DURATION} including end of shift cleaning)"
+    )
+    print(f"{MAX_INTERACTION_COUNT} interactions per day")
+    print(f"{MANUAL_SERVICE_DURATION} to restock pipette tips and take well samples")

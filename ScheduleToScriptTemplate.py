@@ -179,6 +179,21 @@ class HospitalSimulation:
         self.p20.transfer(transfer_ul, target_well, source_well, new_tip="never")
         self.p20.drop_tip()
 
+    def clean(
+        self,
+        well_plate: str,
+        well_number: int,
+        clean_ul: int,
+    ):
+        cleaning_well = self.plates_dict[well_plate].wells()[well_number]
+        self.p20.pick_up_tip()
+        self.p20.transfer(clean_ul, cleaning_well, self.waste, new_tip="never")
+        self.p20.drop_tip()
+        self.p20.pick_up_tip()
+        # TODO: Sleep during clean?
+        self.p20.transfer(clean_ul, self.media, cleaning_well, new_tip="never")
+        self.p20.drop_tip()
+
     def wait_for_continue(self, resume_at: int):
         self.protocol.pause("Pausing for maintenance")
         self.sleep_seconds_after_start(resume_at)
