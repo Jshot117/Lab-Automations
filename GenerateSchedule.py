@@ -40,12 +40,13 @@ END_OF_DAY_MAX_CLEAN_COUNT = TOTAL_P300_TIPS - END_OF_SHIFT_CLEAN_COUNT * 3
 INTERACTIONS_PER_SHIFT = TOTAL_P20_TIPS // 3
 
 # Adjustable variables
-INITIAL_BACTERIA_UL = 100
-INITIAL_MEDIA_UL = 50
-BACTERIA_TRANSFER_UL = 10
-CLEANING_MEDIA_BASE_UL = 50
-# CLEANING_MEDIA_GAUSS_MU = 0.0
-# CLEANING_MEDIA_GAUSS_SIGMA = 1.0
+_INITIAL_BACTERIA_UL = 100  # TODO: Pass to generated script
+_INITIAL_MEDIA_UL = 50  # TODO: Pass to generated script
+# TODO: Use an interaction matrix for different classes
+BACTERIA_TRANSFER_BASE_UL = 5
+BACTERIA_TRANSFER_GAUSS_MUL = 5
+CLEANING_AMOUNT_BASE_UL = 35
+CLEANING_AMOUNT_GAUSS_MUL = 10
 BACTERIA_TRANSFER_SETTLE_WAIT_SECS = 30
 
 INTERACTION_PROBABILITIES = {
@@ -104,6 +105,23 @@ WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT = {
     "equipment": {shift: (0, EQUIPMENT_WELL_COUNT) for shift in SHIFTS},
     "surface": {shift: (0, SURFACE_WELL_COUNT) for shift in SHIFTS},
 }
+
+
+def clamped_gaussian(mu: float, sigma: float, minval: float, maxval: float) -> float:
+    val = random.gauss(mu, sigma)
+    val = min(val, maxval)
+    val = max(val, minval)
+    return val
+
+
+def random_transfer_ul() -> float:
+    gauss = clamped_gaussian(0, 0.4, -1, 1)
+    return BACTERIA_TRANSFER_BASE_UL + gauss * BACTERIA_TRANSFER_GAUSS_MUL
+
+
+def random_clean_ul() -> float:
+    gauss = clamped_gaussian(0, 0.4, -1, 1)
+    return CLEANING_AMOUNT_BASE_UL + gauss * CLEANING_AMOUNT_GAUSS_MUL
 
 
 if __name__ == "__main__":
@@ -228,7 +246,7 @@ if __name__ == "__main__":
                     source_well_number,
                     target_category,
                     target_well_number,
-                    BACTERIA_TRANSFER_UL,  # TODO: Add random spread
+                    random_transfer_ul(),
                     shift,
                 )
                 p20_tips_used += 1
@@ -240,12 +258,12 @@ if __name__ == "__main__":
                     shift
                 ]
                 for well in range(shift_well_range[0], shift_well_range[1]):
-                    add_clean_well_event(category, well, CLEANING_MEDIA_BASE_UL)
+                    add_clean_well_event(category, well, random_clean_ul())
 
         # End of day cleaning
         for category in ["equipment", "surface"]:
             for well in range(shift_well_range[0], shift_well_range[1]):
-                add_clean_well_event(category, well, CLEANING_MEDIA_BASE_UL)
+                add_clean_well_event(category, well, random_clean_ul())
 
         end_of_day_time = (
             DAY_DURATION * day

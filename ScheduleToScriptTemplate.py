@@ -166,7 +166,7 @@ class HospitalSimulation:
         target_well_plate: str,
         source_well_number: int,
         target_well_number: int,
-        transfer_ul: int,
+        transfer_ul: int | float,
     ):
         self.p20.pick_up_tip()
         source_well = self.plates_dict[source_well_plate].wells()[source_well_number]
@@ -183,7 +183,7 @@ class HospitalSimulation:
         self,
         well_plate: str,
         well_number: int,
-        clean_ul: int,
+        clean_ul: int | float,
     ):
         cleaning_well = self.plates_dict[well_plate].wells()[well_number]
         self.p20.pick_up_tip()
@@ -191,6 +191,8 @@ class HospitalSimulation:
         self.p20.drop_tip()
         self.p20.pick_up_tip()
         # TODO: Sleep during clean?
+        # FIXME: Make sure that media well is not contaminated by cleaning_well
+        # when making multiple trips to refill the well
         self.p20.transfer(clean_ul, self.media, cleaning_well, new_tip="never")
         self.p20.drop_tip()
 
