@@ -66,11 +66,11 @@ for event in events:
         )
     elif event["type"] == "clean_well":
         clean_info = event["clean_target_info"]
-        well_category = clean_info["well_category"]
+        well_plate = get_well_plate(clean_info["well_category"])
         well_number = clean_info["well_number"]
         clean_ul = clean_info["clean_ul"]
         generated_lines.append(
-            f"""    simulation.clean("{well_category}", {well_number}, {clean_ul})"""
+            f"""    simulation.clean("{well_plate}", {well_number}, {clean_ul})"""
         )
     elif event["type"] == "wait_for_continue":
         generated_lines.append(f"    simulation.wait_for_continue({event['resume_at']})")
