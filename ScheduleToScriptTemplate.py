@@ -122,15 +122,15 @@ class HospitalSimulation:
                     new_tip="never",
                 )
                 self.p300.blow_out()
-                source_well_volume -= INITIAL_MEDIA_UL
-                self.protocol.comment(f"Remaining volume: {source_well_volume}")
+                self.source_well_volume -= INITIAL_MEDIA_UL
+                self.protocol.comment(f"Remaining volume: {self.source_well_volume}")
                 self.protocol.comment(f"Aspiration zone: {aspiration_zone}")
 
-                if source_well_volume <= 0:
+                if self.source_well_volume <= 0:
                     self.p300.drop_tip()  # Drop the tip before pausing
                     self.p300.home()
                     self.protocol.pause("No liquid in media reservoir. Please refill.")
-                    source_well_volume = 15000  # Reset volume after refill
+                    self.source_well_volume = 15000  # Reset volume after refill
                     self.p300.pick_up_tip()  # Pick up a new tip after refilling
 
             self.p300.drop_tip()  # Drop the tip at the end of each iteration
@@ -196,6 +196,7 @@ class HospitalSimulation:
         else:
             media_well_aspiration_zone = self.media.top(aspiration_zone)
 
+        self.p300.pick_up_tip()
         self.p300.transfer(clean_ul, media_well_aspiration_zone, cleaning_well, new_tip="never")
         # It's fine to reuse the pipette tip here
         self.p300.transfer(clean_ul, cleaning_well, self.waste.top(), new_tip="never")
