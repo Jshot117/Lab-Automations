@@ -189,16 +189,18 @@ class HospitalSimulation:
         clean_ul: int | float,
     ):
         cleaning_well = self.plates_dict[well_plate].wells()[well_number]
-        self.p20.pick_up_tip()
-        # FIXME: Aspiration heights for media well and cleaning well need to be hand set
-        self.p20.transfer(clean_ul, cleaning_well, self.waste, new_tip="never")
-        self.p20.drop_tip()
-        self.p20.pick_up_tip()
+
+        aspiration_zone = self.determine_media_aspiration_zone()
+        if aspiration_zone == "bottom":
+            media_well_aspiration_zone = self.media
+        else:
+            media_well_aspiration_zone = self.media.top(aspiration_zone)
+
+        self.p300.transfer(clean_ul, media_well_aspiration_zone, cleaning_well, new_tip="never")
+        # It's fine to reuse the pipette tip here
+        self.p300.transfer(clean_ul, cleaning_well, self.waste.top(), new_tip="never")
         # TODO: Sleep during clean?
-        # FIXME: Make sure that media well is not contaminated by cleaning_well
-        # when making multiple trips to refill the well
-        self.p20.transfer(clean_ul, self.media, cleaning_well, new_tip="never")
-        self.p20.drop_tip()
+        self.p300.drop_tip()
 
     def wait_for_continue(self, resume_at: int):
         self.protocol.pause("Pausing for maintenance")
