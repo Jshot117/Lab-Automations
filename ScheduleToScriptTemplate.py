@@ -94,7 +94,7 @@ class HospitalSimulation:
     def fill_all_wells_with_media(self, iterations=1):
         self.protocol.comment("Filling all wells with initial media...")
         source_well = self.media
-        source_well_volume = 15000  # Assuming a 15mL reservoir well
+        self.source_well_volume = 15000  # Assuming a 15mL reservoir well
 
         all_target_wells = [
             *self.patient_plate.wells()[:20],
@@ -106,7 +106,7 @@ class HospitalSimulation:
         for i in range(iterations):
             self.p300.pick_up_tip()  # Pick up a new tip at the start of each iteration
             for well in all_target_wells:
-                aspiration_zone = self.determine_aspiration_zone(source_well_volume)
+                aspiration_zone = self.determine_media_aspiration_zone()
                 if aspiration_zone == "bottom":
                     source_well_aspiration_zone = source_well
                 else:
@@ -142,12 +142,12 @@ class HospitalSimulation:
             "Media distribution complete. Please manually add initial bacteria to the first well of the patient plate, then resume the protocol."
         )
 
-    def determine_aspiration_zone(self, volume):
-        if volume > 1000:
+    def determine_media_aspiration_zone(self):
+        if self.source_well_volume > 1000:
             return -2  # 2mm from top
-        elif volume > 500:
+        elif self.source_well_volume > 500:
             return -5  # 5mm from top
-        elif volume > 100:
+        elif self.source_well_volume > 100:
             return -8  # 8mm from top
         else:
             return "bottom"
@@ -187,6 +187,7 @@ class HospitalSimulation:
     ):
         cleaning_well = self.plates_dict[well_plate].wells()[well_number]
         self.p20.pick_up_tip()
+        # FIXME: Aspiration heights for media well and cleaning well need to be hand set
         self.p20.transfer(clean_ul, cleaning_well, self.waste, new_tip="never")
         self.p20.drop_tip()
         self.p20.pick_up_tip()
@@ -203,6 +204,7 @@ class HospitalSimulation:
     def reset_tip_racks(self):
         self.p20.reset_tipracks()
         self.p300.reset_tipracks()
+        self.source_well_volume = 15000
 
 
 def run(protocol: protocol_api.ProtocolContext):
