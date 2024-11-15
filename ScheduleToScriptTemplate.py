@@ -22,13 +22,15 @@ class HospitalSimulation:
 
     def setup_labware(self):
         temp_module = self.protocol.load_module("temperature module", "10")
+        temp_module2 = self.protocol.load_module("temperature module", "7")
         assert isinstance(temp_module, protocol_api.TemperatureModuleContext)
         self.temp_module = temp_module
+        self.temp_module2 = temp_module2
         self.patient_plate = self.temp_module.load_labware(
             "corning_96_wellplate_360ul_flat"
         )
-        self.staff_plate = self.protocol.load_labware(
-            "corning_96_wellplate_360ul_flat", "7", "Staff Plate"
+        self.staff_plate = self.temp_module2.load_labware(
+            "corning_96_wellplate_360ul_flat"
         )
         self.equipment_plate = self.protocol.load_labware(
             "corning_96_wellplate_360ul_flat", "8", "Equipment Plate"
@@ -88,6 +90,7 @@ class HospitalSimulation:
     def initialize(self):
         self.protocol.comment("Starting simulation setup...")
         self.temp_module.set_temperature(37)
+        self.temp_module2.set_temperature(37)
         self.fill_all_wells_with_media(iterations=1)
         self.start_time = datetime.now()
 
