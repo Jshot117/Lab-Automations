@@ -38,23 +38,23 @@ class HospitalSimulation:
         self.surface_plate = self.protocol.load_labware(
             "corning_96_wellplate_360ul_flat", "11", "Surface Plate"
         )
-        self.tiprack_20_one = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "6"
+        self.tiprack_300_one = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "6"
         )
-        self.tiprack_20_two = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "5"
+        self.tiprack_300_two = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "5"
         )
-        self.tiprack_20_three = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "4"
+        self.tiprack_300_three = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "4"
         )
-        self.tiprack_20_four = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "1"
+        self.tiprack_300_four = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "1"
         )
-        self.tiprack_20_five = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_20ul", "2"
+        self.tiprack_300_five = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "2"
         )
-        self.tiprack_300 = self.protocol.load_labware(
-            "opentrons_96_filtertiprack_200ul", "9"
+        self.tiprack_300_six = self.protocol.load_labware(
+            "opentrons_96_tiprack_300ul", "9"
         )
         self.reservoir = self.protocol.load_labware(
             "opentrons_6_tuberack_falcon_50ml_conical", "3"
@@ -67,19 +67,17 @@ class HospitalSimulation:
         }
 
     def setup_pipettes(self):
-        self.p20 = self.protocol.load_instrument(
-            "p20_single_gen2",
-            "left",
-            tip_racks=[
-                self.tiprack_20_one,
-                self.tiprack_20_two,
-                self.tiprack_20_three,
-                self.tiprack_20_four,
-                self.tiprack_20_five,
-            ],
-        )
         self.p300 = self.protocol.load_instrument(
-            "p300_single_gen2", "right", tip_racks=[self.tiprack_300]
+            "p300_single_gen2",
+            "right",
+            tip_racks=[
+                self.tiprack_300_one,
+                self.tiprack_300_two,
+                self.tiprack_300_three,
+                self.tiprack_300_four,
+                self.tiprack_300_five,
+                self.tiprack_300_six,
+            ],
         )
 
     def setup_reagents(self):
@@ -171,16 +169,16 @@ class HospitalSimulation:
         target_well_number: int,
         transfer_ul: int | float,
     ):
-        self.p20.pick_up_tip()
+        self.p300.pick_up_tip()
         source_well = self.plates_dict[source_well_plate].wells()[source_well_number]
         target_well = self.plates_dict[target_well_plate].wells()[target_well_number]
-        self.p20.transfer(transfer_ul, source_well, target_well, new_tip="never")
+        self.p300.transfer(transfer_ul, source_well, target_well, new_tip="never")
         self.protocol.delay(
             BACTERIA_TRANSFER_SETTLE_WAIT_SECS,
             msg=f"Waiting for {target_well} bacteria to settle",
         )
-        self.p20.transfer(transfer_ul, target_well, source_well, new_tip="never")
-        self.p20.drop_tip()
+        self.p300.transfer(transfer_ul, target_well, source_well, new_tip="never")
+        self.p300.drop_tip()
 
     def clean(
         self,
@@ -197,7 +195,9 @@ class HospitalSimulation:
             media_well_aspiration_zone = self.media.top(aspiration_zone)
 
         self.p300.pick_up_tip()
-        self.p300.transfer(clean_ul, media_well_aspiration_zone, cleaning_well, new_tip="never")
+        self.p300.transfer(
+            clean_ul, media_well_aspiration_zone, cleaning_well, new_tip="never"
+        )
         # It's fine to reuse the pipette tip here
         self.p300.transfer(clean_ul, cleaning_well, self.waste.top(), new_tip="never")
         # TODO: Sleep during clean?
@@ -208,7 +208,6 @@ class HospitalSimulation:
         self.sleep_seconds_after_start(resume_at)
 
     def end_of_day_restock(self):
-        self.p20.reset_tipracks()
         self.p300.reset_tipracks()
         self.source_well_volume = 15000
 
