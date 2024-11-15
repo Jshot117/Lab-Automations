@@ -95,7 +95,7 @@ class HospitalSimulation:
     def fill_all_wells_with_media(self, iterations=1):
         self.protocol.comment("Filling all wells with initial media...")
         source_well = self.media
-        self.source_well_volume = 15000  # Assuming a 15mL reservoir well
+        self.source_well_volume = 50000  # 50 ml reservoir
 
         all_target_wells = [
             *self.patient_plate.wells()[:20],
@@ -144,14 +144,16 @@ class HospitalSimulation:
         )
 
     def determine_media_aspiration_zone(self):
-        if self.source_well_volume > 1000:
-            return -2  # 2mm from top
-        elif self.source_well_volume > 500:
-            return -5  # 5mm from top
-        elif self.source_well_volume > 100:
-            return -8  # 8mm from top
+        if self.source_well_volume <= 10000:
+            return 'bottom'
+        elif self.source_well_volume<= 20000:
+            return -97
+        elif self.source_well_volume<= 30000:
+            return -76
+        elif self.source_well_volume<= 40000:
+            return -59
         else:
-            return "bottom"
+            return -40 
 
     def sleep_seconds_after_start(self, seconds_after_start):
         sleep_until = self.start_time + timedelta(seconds=seconds_after_start)

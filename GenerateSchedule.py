@@ -260,12 +260,13 @@ if __name__ == "__main__":
                     add_clean_well_event(category, well, random_clean_ul())
 
         # End of day cleaning
-        for category in ["equipment", "surface"]:
-            shift_well_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[category][
-                "morning"  # Equipment and surfaces are all the same for each shift
-            ]
-            for well in range(shift_well_range[0], shift_well_range[1]):
-                add_clean_well_event(category, well, random_clean_ul())
+        # FIXME: Figure out how many cleaning events we can do
+        # for category in ["equipment", "surface"]:
+        #     shift_well_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[category][
+        #         "morning"  # Equipment and surfaces are all the same for each shift
+        #     ]
+        #     for well in range(shift_well_range[0], shift_well_range[1]):
+        #         add_clean_well_event(category, well, random_clean_ul())
 
         end_of_day_time = (
             DAY_DURATION * day
