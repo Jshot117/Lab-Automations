@@ -190,10 +190,10 @@ if __name__ == "__main__":
             }
         )
 
-    def add_reset_tiprack_event(time_since_start: timedelta):
+    def add_restock_event(time_since_start: timedelta):
         simulation_events.append(
             {
-                "type": "reset_tiprack",
+                "type": "end_of_day_restock",
                 "seconds_after_start": time_since_start.total_seconds(),
             }
         )
@@ -262,6 +262,9 @@ if __name__ == "__main__":
 
         # End of day cleaning
         for category in ["equipment", "surface"]:
+            shift_well_range = WELLS_NUMBERS_RANGE_OF_TYPE_PER_SHIFT[category][
+                "morning"  # Equipment and surfaces are all the same for each shift
+            ]
             for well in range(shift_well_range[0], shift_well_range[1]):
                 add_clean_well_event(category, well, random_clean_ul())
 
@@ -271,7 +274,7 @@ if __name__ == "__main__":
             + END_OF_DAY_CLEAN_DURATION
         )
         add_comment_event(end_of_day_time, f"Finished day {day + 1}/{DAYS}")
-        add_reset_tiprack_event(end_of_day_time)
+        add_restock_event(end_of_day_time)
         assert daily_p20_tips_used <= TOTAL_P20_TIPS
 
     assert all(

@@ -74,8 +74,8 @@ for event in events:
         )
     elif event["type"] == "wait_for_continue":
         generated_lines.append(f"    simulation.wait_for_continue({event['resume_at']})")
-    elif event["type"] == "reset_tiprack":
-        generated_lines.append("    simulation.reset_tip_racks()")
+    elif event["type"] == "end_of_day_restock":
+        generated_lines.append("    simulation.end_of_day_restock()")
     else:
         raise ValueError(f"unexpected event type {event['type']}")
 

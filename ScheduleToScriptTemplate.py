@@ -201,7 +201,7 @@ class HospitalSimulation:
         self.protocol.pause("Pausing for maintenance")
         self.sleep_seconds_after_start(resume_at)
 
-    def reset_tip_racks(self):
+    def end_of_day_restock(self):
         self.p20.reset_tipracks()
         self.p300.reset_tipracks()
         self.source_well_volume = 15000
