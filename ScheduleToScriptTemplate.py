@@ -11,6 +11,7 @@ metadata = {
 # TODO: Get from generated schedule
 INITIAL_MEDIA_UL = 250
 BACTERIA_TRANSFER_SETTLE_WAIT_SECS = 30
+BLEACH_CONTACT_WAIT_SECS = 30
 BLEACH_MIX_UL = 200
 MIX_REPITITIONS = 4
 
@@ -134,7 +135,13 @@ class HospitalSimulation:
                     self.source_well_volume = 50000  # Reset volume after refill
                     self.p300.pick_up_tip()  # Pick up a new tip after refilling
 
-            self.p300.drop_tip()  # Drop the tip at the end of each iteration
+            self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
+            self.p300.blow_out(self.bleach.top())
+            self.protocol.delay(
+                BLEACH_CONTACT_WAIT_SECS,
+                msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
+            )
+            self.p300.return_tip()  # Drop the tip at the end of each iteration
             self.p300.home()
             if i != iterations - 1:
                 self.protocol.pause("Iteration complete. Press resume to continue.")
@@ -184,7 +191,11 @@ class HospitalSimulation:
         )
         self.p300.transfer(transfer_ul, target_well, source_well, new_tip="never")
         self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
-        self.p300.blow_out()
+        self.p300.blow_out(self.bleach.top())
+        self.protocol.delay(
+                BLEACH_CONTACT_WAIT_SECS,
+                msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
+            )
         self.p300.return_tip()
 
     def clean(
