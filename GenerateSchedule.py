@@ -21,8 +21,7 @@ DAYS = 2
 DOCTOR_WELLS_PER_SHIFT = 6
 NURSE_WELLS_PER_SHIFT = 12
 
-TOTAL_P20_TIPS = 96 * 5  # Tips per rack * racks
-TOTAL_P300_TIPS = 96 * 1  # Tips per rack * racks
+TOTAL_P300_TIPS = 96 * 6  # Tips per rack * racks
 PATIENT_WELL_COUNT = 20
 DOCTOR_WELL_COUNT = DOCTOR_WELLS_PER_SHIFT * len(SHIFTS)
 NURSE_WELL_COUNT = NURSE_WELLS_PER_SHIFT * len(SHIFTS)
@@ -33,19 +32,19 @@ END_OF_SHIFT_CLEAN_COUNT = DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT
 END_OF_DAY_CLEAN_COUNT = EQUIPMENT_WELL_COUNT + SURFACE_WELL_COUNT
 TOTAL_CLEAN_COUNT = END_OF_SHIFT_CLEAN_COUNT * len(SHIFTS) + END_OF_DAY_CLEAN_COUNT
 
-MAX_INTERACTION_COUNT = TOTAL_P20_TIPS
+MAX_INTERACTION_COUNT = TOTAL_P300_TIPS
 END_OF_SHIFT_CLEAN_COUNT = DOCTOR_WELLS_PER_SHIFT + NURSE_WELLS_PER_SHIFT
 END_OF_DAY_MAX_CLEAN_COUNT = TOTAL_P300_TIPS - END_OF_SHIFT_CLEAN_COUNT * 3
 INTERACTIONS_PER_SHIFT = MAX_INTERACTION_COUNT // 3
 
 # Adjustable variables
 _INITIAL_BACTERIA_UL = 100  # TODO: Pass to generated script
-_INITIAL_MEDIA_UL = 50  # TODO: Pass to generated script
+_INITIAL_MEDIA_UL = 250  # TODO: Pass to generated script
 # TODO: Use an interaction matrix for different classes
-BACTERIA_TRANSFER_BASE_UL = 5
-BACTERIA_TRANSFER_GAUSS_MUL = 5
-CLEANING_AMOUNT_BASE_UL = 35
-CLEANING_AMOUNT_GAUSS_MUL = 10
+BACTERIA_TRANSFER_BASE_UL = 25
+BACTERIA_TRANSFER_GAUSS_MUL = 25
+CLEANING_AMOUNT_BASE_UL = 175
+CLEANING_AMOUNT_GAUSS_MUL = 50
 BACTERIA_TRANSFER_SETTLE_WAIT_SECS = 30
 
 INTERACTION_PROBABILITIES = {
@@ -124,7 +123,7 @@ def random_clean_ul() -> float:
 
 
 if __name__ == "__main__":
-    p20_tips_used = 0
+    p300_tips_used = 0
     p300_tips_used = 0
 
     time_since_start = timedelta(seconds=0)
@@ -202,7 +201,7 @@ if __name__ == "__main__":
             maintenance_end_time = DAY_DURATION * day
             add_wait_for_continue_event(maintenance_end_time)
 
-        daily_p20_tips_used = 0
+        daily_p300_tips_used = 0
         for shift_number, shift in enumerate(SHIFTS):
             shift_start_time = (
                 SHIFT_DURATION + END_OF_SHIFT_CLEAN_DURATION
@@ -248,8 +247,8 @@ if __name__ == "__main__":
                     random_transfer_ul(),
                     shift,
                 )
-                p20_tips_used += 1
-                daily_p20_tips_used += 1
+                p300_tips_used += 1
+                daily_p300_tips_used += 1
 
             # End of shift cleaning
             for category in ["doctor", "nurse"]:
@@ -275,7 +274,7 @@ if __name__ == "__main__":
         )
         add_comment_event(end_of_day_time, f"Finished day {day + 1}/{DAYS}")
         add_restock_event(end_of_day_time)
-        assert daily_p20_tips_used <= TOTAL_P20_TIPS
+        assert daily_p300_tips_used <= TOTAL_P300_TIPS
 
     assert all(
         (

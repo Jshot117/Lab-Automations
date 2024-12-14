@@ -9,8 +9,10 @@ metadata = {
 }
 
 # TODO: Get from generated schedule
-INITIAL_MEDIA_UL = 50
+INITIAL_MEDIA_UL = 250
 BACTERIA_TRANSFER_SETTLE_WAIT_SECS = 30
+BLEACH_MIX_UL = 200
+MIX_REPITITIONS = 4
 
 
 class HospitalSimulation:
@@ -84,6 +86,7 @@ class HospitalSimulation:
         self.media = self.reservoir.wells()[0]
         self.bacteria = self.reservoir.wells()[1]
         self.waste = self.reservoir.wells()[2]
+        self.bleach = self.reservoir.wells()[3]
 
     def initialize(self):
         self.protocol.comment("Starting simulation setup...")
@@ -180,7 +183,9 @@ class HospitalSimulation:
             msg=f"Waiting for {target_well} bacteria to settle",
         )
         self.p300.transfer(transfer_ul, target_well, source_well, new_tip="never")
-        self.p300.drop_tip()
+        self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
+        self.p300.blow_out()
+        self.p300.return_tip()
 
     def clean(
         self,
