@@ -135,13 +135,14 @@ class HospitalSimulation:
                     self.source_well_volume = 50000  # Reset volume after refill
                     self.p300.pick_up_tip()  # Pick up a new tip after refilling
 
-            self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
-            self.p300.blow_out(self.bleach.top())
-            self.protocol.delay(
-                BLEACH_CONTACT_WAIT_SECS,
-                msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
-            )
-            self.p300.return_tip()  # Drop the tip at the end of each iteration
+            # self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
+            # self.p300.blow_out(self.bleach.top())
+            # self.protocol.delay(
+            #     BLEACH_CONTACT_WAIT_SECS,
+            #     msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
+            # )
+            # self.p300.return_tip()  # Drop the tip at the end of each iteration
+            self.p300.drop_tip()
             self.p300.home()
             if i != iterations - 1:
                 self.protocol.pause("Iteration complete. Press resume to continue.")
@@ -190,13 +191,14 @@ class HospitalSimulation:
             msg=f"Waiting for {target_well} bacteria to settle",
         )
         self.p300.transfer(transfer_ul, target_well, source_well, new_tip="never")
-        self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
-        self.p300.blow_out(self.bleach.top())
-        self.protocol.delay(
-                BLEACH_CONTACT_WAIT_SECS,
-                msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
-            )
-        self.p300.return_tip()
+        # self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
+        # self.p300.blow_out(self.bleach.top())
+        # self.protocol.delay(
+        #         BLEACH_CONTACT_WAIT_SECS,
+        #         msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
+        #     )
+        # self.p300.return_tip()
+        self.p300.drop_tip()
 
     def clean(
         self,
