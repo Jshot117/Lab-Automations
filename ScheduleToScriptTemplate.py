@@ -131,7 +131,7 @@ class HospitalSimulation:
                     self.p300.drop_tip()  # Drop the tip before pausing
                     self.p300.home()
                     self.protocol.pause("No liquid in media reservoir. Please refill.")
-                    self.source_well_volume = 15000  # Reset volume after refill
+                    self.source_well_volume = 50000  # Reset volume after refill
                     self.p300.pick_up_tip()  # Pick up a new tip after refilling
 
             self.p300.drop_tip()  # Drop the tip at the end of each iteration
@@ -216,7 +216,7 @@ class HospitalSimulation:
 
     def end_of_day_restock(self):
         self.p300.reset_tipracks()
-        self.source_well_volume = 15000
+        self.source_well_volume = 50000
 
 
 def run(protocol: protocol_api.ProtocolContext):
