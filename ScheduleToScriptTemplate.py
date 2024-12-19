@@ -221,7 +221,13 @@ class HospitalSimulation:
         # It's fine to reuse the pipette tip here
         self.p300.transfer(clean_ul, cleaning_well, self.waste.top(), new_tip="never")
         # TODO: Sleep during clean?
-        self.p300.drop_tip()
+        self.p300.mix(MIX_REPITITIONS, BLEACH_MIX_UL, self.bleach.top(-40))
+        self.p300.blow_out(self.bleach.top())
+        self.protocol.delay(
+                BLEACH_CONTACT_WAIT_SECS,
+                msg=f"Waiting {BLEACH_CONTACT_WAIT_SECS} seconds for bleach contact",
+            )
+        self.p300.return_tip()
 
     def wait_for_continue(self, resume_at: int):
         self.protocol.pause("Pausing for maintenance")
